@@ -23,10 +23,20 @@ class PublishSubject<T> : Flow<T>, FlowCollector<T>  {
 
     private var error : Throwable? = null
 
+    /**
+     * Returns true if this PublishSubject has any collectors.
+     */
     fun hasCollectors() : Boolean = collectors.get().isNotEmpty()
 
+    /**
+     * Returns the current number of collectors.
+     */
     fun collectorCount() : Int = collectors.get().size
 
+    /**
+     * Emit the value to all current collectors, waiting for each of them
+     * to be ready for consuming it.
+     */
     override suspend fun emit(value: T) {
         for (collector in collectors.get()) {
             collector.next(value)
@@ -99,6 +109,9 @@ class PublishSubject<T> : Flow<T>, FlowCollector<T>  {
         }
     }
 
+    /**
+     * Start collecting signals from this PublishSubject.
+     */
     @InternalCoroutinesApi
     override suspend fun collect(collector: FlowCollector<T>) {
         val inner = InnerCollector<T>()

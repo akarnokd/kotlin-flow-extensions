@@ -18,6 +18,11 @@ open class Resumable : AtomicReference<Continuation<Any>>() {
         val VALUE = Object()
     }
 
+    /**
+     * Await the resumption of this Resumable, suspending the
+     * current coroutine if necessary.
+     * Only one thread can call this method.
+     */
     suspend fun await() {
         suspendCoroutine<Any> {
             while (true) {
@@ -37,6 +42,11 @@ open class Resumable : AtomicReference<Continuation<Any>>() {
         getAndSet(null)
     }
 
+    /**
+     * Resume this Resumable, resuming any currently suspended
+     * [await] callers.
+     * This method can be called by any number of threads.
+     */
     fun resume() {
         if (get() == READY) {
             return
@@ -44,6 +54,10 @@ open class Resumable : AtomicReference<Continuation<Any>>() {
         getAndSet(READY)?.resumeWith(Result.success(VALUE))
     }
 
+    /**
+     * Represents a stateless indicator if the continuation is already
+     * ready for resumption, thus no need to get suspended.
+     */
     private class ReadyContinuation : Continuation<Any> {
         override val context: CoroutineContext
             get() = EmptyCoroutineContext
