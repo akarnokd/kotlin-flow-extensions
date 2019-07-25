@@ -47,12 +47,12 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
     /**
      * Throw an error on the consumer side.
      */
-    override suspend fun emitError(error: Throwable) {
+    override suspend fun emitError(ex: Throwable) {
         if (this.error == null) {
-            this.error = error
+            this.error = ex
             @Suppress("UNCHECKED_CAST")
             for (collector in collectors.getAndSet(TERMINATED as Array<InnerCollector<T>>)) {
-                collector.error(error)
+                collector.error(ex)
             }
         }
     }

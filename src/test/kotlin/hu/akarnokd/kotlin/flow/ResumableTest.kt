@@ -1,3 +1,5 @@
+package hu.akarnokd.kotlin.flow
+
 import hu.akarnokd.kotlin.flow.Resumable
 import kotlinx.coroutines.runBlocking
 import org.junit.Test

@@ -22,7 +22,7 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
     @Suppress("UNCHECKED_CAST")
     private val collectors = AtomicReference(EMPTY as Array<InnerCollector<T>>)
 
-    private var done: Boolean = false;
+    private var done: Boolean = false
 
     constructor() {
         buffer = UnboundedReplayBuffer()
@@ -45,13 +45,13 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
     @FlowPreview
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         val inner = InnerCollector<T>(collector, this)
-        add(inner);
+        add(inner)
         buffer.replay(inner)
     }
 
     override suspend fun emit(value: T) {
         if (!done) {
-            buffer.emit(value);
+            buffer.emit(value)
 
             for (collector in collectors.get()) {
                 collector.resume()
@@ -59,9 +59,10 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     override suspend fun emitError(ex: Throwable) {
         if (!done) {
-            done = true;
+            done = true
             buffer.error(ex)
             for (collector in collectors.getAndSet(TERMINATED as Array<InnerCollector<T>>)) {
                 collector.resume()
@@ -69,9 +70,10 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     override suspend fun complete() {
         if (!done) {
-            done = true;
+            done = true
             buffer.complete()
             for (collector in collectors.getAndSet(TERMINATED as Array<InnerCollector<T>>)) {
                 collector.resume()
@@ -179,15 +181,15 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
         override suspend fun replay(consumer: InnerCollector<T>) {
             while (true) {
 
-                val d = done;
+                val d = done
                 val empty = consumer.index == size
 
                 if (d && empty) {
-                    val ex = error;
+                    val ex = error
                     if (ex != null) {
-                        throw ex;
+                        throw ex
                     }
-                    return;
+                    return
                 }
 
                 if (!empty) {
@@ -229,27 +231,28 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
         override fun emit(value: T) {
             val next = Node<T>(value)
             tail.set(next)
-            tail = next;
+            tail = next
 
             if (size == maxSize) {
                 head = head.get()
             } else {
-                size++;
+                size++
             }
         }
 
         override fun error(ex: Throwable) {
-            error = ex;
-            done = true;
+            error = ex
+            done = true
         }
 
         override fun complete() {
-            done = true;
+            done = true
         }
 
         override suspend fun replay(consumer: InnerCollector<T>) {
             while (true) {
-                val d = done;
+                val d = done
+                @Suppress("UNCHECKED_CAST")
                 var index = consumer.node as? Node<T>
                 if (index == null) {
                     index = head
@@ -259,11 +262,11 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
                 val empty = next == null
 
                 if (d && empty) {
-                    val ex = error;
+                    val ex = error
                     if (ex != null) {
-                        throw ex;
+                        throw ex
                     }
-                    return;
+                    return
                 }
 
                 if (!empty) {
@@ -282,9 +285,7 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
             }
         }
 
-        private class Node<T>(val value: T?) : AtomicReference<Node<T>>() {
-
-        }
+        private class Node<T>(val value: T?) : AtomicReference<Node<T>>()
     }
 
     private class TimeAndSizeBoundReplayBuffer<T>(
@@ -312,15 +313,15 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
         }
 
         override fun emit(value: T) {
-            val now = timeSource(unit);
+            val now = timeSource(unit)
             val next = Node<T>(value, now)
             tail.set(next)
-            tail = next;
+            tail = next
 
             if (size == maxSize) {
                 head = head.get()
             } else {
-                size++;
+                size++
             }
 
             trimTime(now)
@@ -328,7 +329,7 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
         fun trimTime(now: Long) {
             val limit = now - maxTime
-            var h = head;
+            var h = head
 
             while (true) {
                 val next = h.get()
@@ -336,14 +337,14 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
                     h = next
                     size--
                 } else {
-                    break;
+                    break
                 }
             }
             head = h
         }
 
         override fun error(ex: Throwable) {
-            error = ex;
+            error = ex
             done = true
         }
 
@@ -353,14 +354,14 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
         fun findHead() : Node<T> {
             val limit = timeSource(unit) - maxTime
-            var h = head;
+            var h = head
 
             while (true) {
                 val next = h.get()
                 if (next != null && next.timestamp <= limit) {
                     h = next
                 } else {
-                    break;
+                    break
                 }
             }
             return h
@@ -368,7 +369,8 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
         override suspend fun replay(consumer: InnerCollector<T>) {
             while (true) {
-                val d = done;
+                val d = done
+                @Suppress("UNCHECKED_CAST")
                 var index = consumer.node as? Node<T>
                 if (index == null) {
                     index = findHead()
@@ -378,11 +380,11 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
                 val empty = next == null
 
                 if (d && empty) {
-                    val ex = error;
+                    val ex = error
                     if (ex != null) {
-                        throw ex;
+                        throw ex
                     }
-                    return;
+                    return
                 }
 
                 if (!empty) {
@@ -401,8 +403,6 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
             }
         }
 
-        private class Node<T>(val value: T?, val timestamp: Long) : AtomicReference<Node<T>>() {
-
-        }
+        private class Node<T>(val value: T?, val timestamp: Long) : AtomicReference<Node<T>>()
     }
 }

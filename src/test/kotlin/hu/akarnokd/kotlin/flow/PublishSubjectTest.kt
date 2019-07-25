@@ -1,6 +1,7 @@
+package hu.akarnokd.kotlin.flow
+
 import org.junit.Test
 import kotlinx.coroutines.flow.*
-import hu.akarnokd.kotlin.flow.*
 import kotlinx.coroutines.*
 import org.junit.Assert.assertTrue
 import java.io.IOException
@@ -204,8 +205,8 @@ class PublishSubjectTest {
             val job2 = launch(it.asCoroutineDispatcher()) {
                 subject.take(n / 2)
                         .collect {
-                    counter2.lazySet(counter2.get() + 1)
-                }
+                            counter2.lazySet(counter2.get() + 1)
+                        }
             }
 
             while (subject.collectorCount() != 2) {
