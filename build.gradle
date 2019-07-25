@@ -5,13 +5,22 @@ buildscript {
 
     repositories {
         mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "biz.aQute.bnd:biz.aQute.bnd.gradle:4.2.0"
+        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.8.0'
     }
 }
 
 apply plugin: 'kotlin'
+apply plugin: 'jacoco'
+
+group = "com.github.akarnokd"
+ext.githubProjectName = 'kotin-flow-extensions'
 
 repositories {
     mavenCentral()
@@ -23,3 +32,21 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 }
+
+jacoco {
+    toolVersion = "0.8.4"
+}
+
+apply plugin: 'maven'
+
+apply plugin: 'biz.aQute.bnd.builder'
+
+jar {
+    bnd ('Bundle-Name': 'kotlin-flow-extensions',
+            'Bundle-Vendor': 'akarnokd',
+            'Bundle-Description': 'Extensions to the Kotlin Flow library.',
+            'Import-Package': '!org.junit,!junit.framework,!org.mockito.*,*',
+            'Bundle-DocURL': 'https://github.com/akarnokd/kotlin-flow-extensions')
+}
+
+apply plugin: "com.vanniktech.maven.publish"
