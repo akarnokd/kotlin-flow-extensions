@@ -37,6 +37,13 @@ jacoco {
     toolVersion = "0.8.4"
 }
 
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
 apply plugin: 'maven'
 
 apply plugin: 'biz.aQute.bnd.builder'
