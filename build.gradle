@@ -65,3 +65,7 @@ test {
         //    showStandardStreams = true
     }
 }
+
+build.dependsOn jacocoTestReport
+
+check.dependsOn jacocoTestReport
