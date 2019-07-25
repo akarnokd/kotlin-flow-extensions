@@ -50,3 +50,11 @@ jar {
 }
 
 apply plugin: "com.vanniktech.maven.publish"
+
+test {
+    maxHeapSize = "1g"
+    testLogging  {
+        events "started", "failed" // "skipped", "passed"
+        //    showStandardStreams = true
+    }
+}

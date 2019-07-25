@@ -186,6 +186,7 @@ class PublishSubjectTest {
     }
 
     @Test
+    @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun multiConsumerTake() = runBlocking {
         withSingle {
             val subject = PublishSubject<Int>();
