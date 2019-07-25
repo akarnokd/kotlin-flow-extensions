@@ -1,9 +1,9 @@
-package hu.akarnokd.kotlin.flow;
+package hu.akarnokd.kotlin.flow
 
-import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.AbstractFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -11,7 +11,8 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * @param <T> the element type of the [Flow]
  */
-class PublishSubject<T> : Flow<T>, FlowCollector<T>  {
+@FlowPreview
+class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
 
     companion object {
         private val EMPTY = arrayOf<InnerCollector<Any>>()
@@ -26,12 +27,12 @@ class PublishSubject<T> : Flow<T>, FlowCollector<T>  {
     /**
      * Returns true if this PublishSubject has any collectors.
      */
-    fun hasCollectors() : Boolean = collectors.get().isNotEmpty()
+    override fun hasCollectors() : Boolean = collectors.get().isNotEmpty()
 
     /**
      * Returns the current number of collectors.
      */
-    fun collectorCount() : Int = collectors.get().size
+    override fun collectorCount() : Int = collectors.get().size
 
     /**
      * Emit the value to all current collectors, waiting for each of them
@@ -46,7 +47,7 @@ class PublishSubject<T> : Flow<T>, FlowCollector<T>  {
     /**
      * Throw an error on the consumer side.
      */
-    suspend fun emitError(error: Throwable) {
+    override suspend fun emitError(error: Throwable) {
         if (this.error == null) {
             this.error = error
             @Suppress("UNCHECKED_CAST")
@@ -59,7 +60,7 @@ class PublishSubject<T> : Flow<T>, FlowCollector<T>  {
     /**
      * Indicate no further items will be emitted
      */
-    suspend fun complete() {
+    override suspend fun complete() {
         @Suppress("UNCHECKED_CAST")
         for (collector in collectors.getAndSet(TERMINATED as Array<InnerCollector<T>>)) {
             collector.complete()
@@ -87,7 +88,7 @@ class PublishSubject<T> : Flow<T>, FlowCollector<T>  {
     private fun remove(inner: InnerCollector<T>) {
         while (true) {
             val a = collectors.get()
-            val n = a.size;
+            val n = a.size
             if (n == 0) {
                 return
             }
@@ -112,8 +113,8 @@ class PublishSubject<T> : Flow<T>, FlowCollector<T>  {
     /**
      * Start collecting signals from this PublishSubject.
      */
-    @InternalCoroutinesApi
-    override suspend fun collect(collector: FlowCollector<T>) {
+    @FlowPreview
+    override suspend fun collectSafely(collector: FlowCollector<T>) {
         val inner = InnerCollector<T>()
         if (add(inner)) {
             while (true) {
@@ -156,9 +157,7 @@ class PublishSubject<T> : Flow<T>, FlowCollector<T>  {
     private class InnerCollector<T> : Resumable() {
         var value: T? = null
         var error: Throwable? = null
-        @Volatile
         var done: Boolean = false
-        @Volatile
         var hasValue: Boolean = false
 
         val consumerReady = Resumable()

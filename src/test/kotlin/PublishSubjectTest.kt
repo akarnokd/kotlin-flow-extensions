@@ -4,13 +4,12 @@ import hu.akarnokd.kotlin.flow.*
 import kotlinx.coroutines.*
 import org.junit.Assert.assertTrue
 import java.io.IOException
-import java.util.concurrent.Executors
-import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.collections.ArrayList
 import kotlin.test.assertEquals
 
+@FlowPreview
 class PublishSubjectTest {
 
     @Test
