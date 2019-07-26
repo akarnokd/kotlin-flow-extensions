@@ -7,9 +7,17 @@ Extensions to the Kotlin Flow library.
 
 # Features
 
+Table of contents
+
+- Hot Flows
+  - [PublishSubject](#publishsubject)
+  - [ReplaySubject](#replaysubject)
+  - [BehaviorSubject](#behaviorsubject)
+- Intermediate Flow operators
+
 ## PublishSubject
 
-Multicasts values to one or more flow collectors in a coordinated fashion, awaiting all collectors to be ready
+Multicasts values to one or more flow collectors in a coordinated fashion, awaiting each collector to be ready
 to receive the next item or termination.
 
 ```kotlin
@@ -25,6 +33,12 @@ runBlocking {
         }
         println("Done")
     }
+    
+    // wait for the collector to arrive
+    while (!publishSubject.hasCollectors()) {
+        delay(1)
+    }
+
    
     publishSubject.emit(1)
     publishSubject.complete()
@@ -53,6 +67,11 @@ runBlocking {
         println("Done")
     }
    
+    // wait for the collector to arrive
+    while (!replaySubject.hasCollectors()) {
+        delay(1)
+    }
+
     replaySubject.emit(1)
     replaySubject.emit(2)
     replaySubject.emit(3)
@@ -64,5 +83,42 @@ runBlocking {
         println(it)
     }
     println("Done 2")
+}
+```
+
+## BehaviorSubject
+
+Caches the last item received and multicasts it and subsequent items (continuously) to collectors, awaiting each collector to be ready
+to receive the next item or termination. It is possible to set an initial value to be sent to fresh collectors via a constructor.
+
+```kotlin
+import hu.akarnokd.kotlin.flow.*
+
+runBlocking {
+    
+    val behaviorSubject = BehaviorSubject<Int>()
+    behaviorSubject.emit(1)
+  
+    // OR
+    // val behaviorSubject = BehaviorSubject<Int>(1)
+
+
+    val job = launch(Dispatchers.IO) {
+        behaviorSubject.collect {
+            println(it)
+        }
+        println("Done")
+    }
+   
+    // wait for the collector to arrive
+    while (!behaviorSubject.hasCollectors()) {
+        delay(1)
+    }
+
+    behaviorSubject.emit(2)
+    behaviorSubject.emit(3)
+    behaviorSubject.complete()
+   
+    job.join()
 }
 ```
