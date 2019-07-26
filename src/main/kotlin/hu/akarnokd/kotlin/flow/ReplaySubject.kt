@@ -14,7 +14,7 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
     private val buffer: Buffer<T>
 
-    companion object {
+    private companion object {
         private val EMPTY = arrayOf<InnerCollector<Any>>()
         private val TERMINATED = arrayOf<InnerCollector<Any>>()
     }
@@ -90,7 +90,6 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
      * Returns the current number of collectors.
      */
     override fun collectorCount() : Int = collectors.get().size
-
 
     @Suppress("UNCHECKED_CAST", "")
     private fun add(inner: InnerCollector<T>) : Boolean {

@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference
 @FlowPreview
 class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
 
-    companion object {
+    private companion object {
         private val EMPTY = arrayOf<InnerCollector<Any>>()
         private val TERMINATED = arrayOf<InnerCollector<Any>>()
     }
