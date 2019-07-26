@@ -16,12 +16,13 @@
 
 package hu.akarnokd.kotlin.flow
 
-import hu.akarnokd.kotlin.flow.impl.FlowMulticastFunction
-import hu.akarnokd.kotlin.flow.impl.FlowStartCollectOn
+import hu.akarnokd.kotlin.flow.impl.*
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import java.util.concurrent.TimeUnit
 
 /**
@@ -100,3 +101,36 @@ fun <T> Flow<T>.concatWith(other: Flow<T>) : Flow<T> {
         }
     }
 }
+
+/**
+ * Consumes the upstream and dispatches individual items to a parrallel rail
+ * of the parallel flow for further consumption.
+ */
+fun <T> Flow<T>.parallel(parallelism: Int, runOn: (Int) -> CoroutineDispatcher) : ParallelFlow<T> =
+    FlowParallel(this, parallelism, runOn)
+
+/**
+ * Consumes the parallel upstream and turns it into a sequential flow again.
+ */
+@FlowPreview
+fun <T> ParallelFlow<T>.sequential() : Flow<T> =
+        FlowSequential(this)
+
+/**
+ * Maps the values of the upstream in parallel.
+ */
+fun <T, R> ParallelFlow<T>.map(mapper: suspend (T) -> R) : ParallelFlow<R> =
+        FlowParallelMap(this, mapper)
+
+/**
+ * Filters the values of the upstream in parallel.
+ */
+fun <T> ParallelFlow<T>.filter(predicate: suspend (T) -> Boolean) : ParallelFlow<T> =
+        FlowParallelFilter(this, predicate)
+
+/**
+ * Transform each upstream item into zero or more emits for the downstream
+ * in parallel.
+ */
+fun <T, R> ParallelFlow<T>.transform(callback: suspend FlowCollector<R>.(T) -> Unit) : ParallelFlow<R> =
+        FlowParallelTransform(this, callback)

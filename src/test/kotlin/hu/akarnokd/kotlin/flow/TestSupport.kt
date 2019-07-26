@@ -16,8 +16,11 @@
 
 package hu.akarnokd.kotlin.flow
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.*
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -33,6 +36,16 @@ suspend fun withSingle(block: suspend (ExecutorService) -> Unit) {
     }
 }
 
+suspend fun withParallels(parallelism: Int, block: suspend (List<CoroutineDispatcher>) -> Unit) {
+    val executors = Array(parallelism) { Executors.newSingleThreadExecutor() }
+
+    try {
+        block(executors.map { it.asCoroutineDispatcher() })
+    } finally {
+        executors.forEach { it.shutdownNow() }
+    }
+}
+
 suspend fun <T> Flow<T>.assertResult(vararg values: T) {
     val list = ArrayList<T>()
 
@@ -41,4 +54,16 @@ suspend fun <T> Flow<T>.assertResult(vararg values: T) {
     }
 
     assertEquals(values.asList(), list)
+}
+
+suspend fun <T> Flow<T>.assertResultSet(vararg values: T) {
+    val list = HashSet<T>()
+
+    this.collect {
+        list.add(it)
+    }
+
+    assertEquals(values.size, list.size)
+
+    values.forEach { assertTrue("" + it, list.contains(it)) }
 }

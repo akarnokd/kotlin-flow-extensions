@@ -23,8 +23,19 @@ Table of contents
   - [PublishSubject](#publishsubject)
   - [ReplaySubject](#replaysubject)
   - [BehaviorSubject](#behaviorsubject)
-- Intermediate Flow operators
-
+- Intermediate Flow operators (`FlowExtensions`)
+  - `Flow.publish`
+  - `Flow.replay`
+  - `Flow.startCollectOn`
+  - `Flow.concatWith`
+  - `Flow.parallel`
+- `ParallelFlow` operators (`FlowExtensions`)
+  - `ParallelFlow.map`
+  - `ParallelFlow.filter`
+  - `ParallelFlow.transform`
+  - `ParallelFlow.sequential`
+- `ConnectableFlow`
+  
 ## PublishSubject
 
 Multicasts values to one or more flow collectors in a coordinated fashion, awaiting each collector to be ready
