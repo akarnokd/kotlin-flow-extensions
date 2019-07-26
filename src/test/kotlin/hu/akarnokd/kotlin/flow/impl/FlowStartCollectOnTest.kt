@@ -11,12 +11,11 @@ import org.junit.Test
 @FlowPreview
 class FlowStartCollectOnTest {
     @Test
-    @Ignore("Doesn't work, get all sorts of IllegalStateException due to another coroutine")
     fun basic() = runBlocking {
 
         arrayOf(1, 2, 3, 4, 5)
                 .asFlow()
-                .startCollectOn(this, Dispatchers.IO)
+                .startCollectOn(Dispatchers.IO)
                 .assertResult(1, 2, 3, 4, 5)
     }
 }

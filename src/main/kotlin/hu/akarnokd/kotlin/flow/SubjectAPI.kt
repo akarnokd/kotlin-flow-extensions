@@ -16,12 +16,13 @@
 
 package hu.akarnokd.kotlin.flow
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 
 /**
  * Base interface for suspendable push signals emit, emitError and complete.
  */
-interface SubjectAPI<T> : FlowCollector<T> {
+interface SubjectAPI<T> : FlowCollector<T>, Flow<T> {
 
     /**
      * Signal an Throwable to the collector.

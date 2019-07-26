@@ -31,12 +31,12 @@ import java.util.concurrent.atomic.AtomicReference
 class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
 
     private companion object {
-        private val EMPTY = arrayOf<InnerCollector<Any>>()
-        private val TERMINATED = arrayOf<InnerCollector<Any>>()
+        private val EMPTY = arrayOf<ResumableCollector<Any>>()
+        private val TERMINATED = arrayOf<ResumableCollector<Any>>()
     }
 
     @Suppress("UNCHECKED_CAST")
-    private val collectors = AtomicReference(EMPTY as Array<InnerCollector<T>>)
+    private val collectors = AtomicReference(EMPTY as Array<ResumableCollector<T>>)
 
     private var error : Throwable? = null
 
@@ -67,7 +67,7 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
         if (this.error == null) {
             this.error = ex
             @Suppress("UNCHECKED_CAST")
-            for (collector in collectors.getAndSet(TERMINATED as Array<InnerCollector<T>>)) {
+            for (collector in collectors.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
                 collector.error(ex)
             }
         }
@@ -78,13 +78,13 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
      */
     override suspend fun complete() {
         @Suppress("UNCHECKED_CAST")
-        for (collector in collectors.getAndSet(TERMINATED as Array<InnerCollector<T>>)) {
+        for (collector in collectors.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
             collector.complete()
         }
     }
 
     @Suppress("UNCHECKED_CAST", "")
-    private fun add(inner: InnerCollector<T>) : Boolean {
+    private fun add(inner: ResumableCollector<T>) : Boolean {
         while (true) {
 
             val a = collectors.get()
@@ -94,14 +94,14 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
             val n = a.size
             val b = a.copyOf(n + 1)
             b[n] = inner
-            if (collectors.compareAndSet(a, b as Array<InnerCollector<T>>)) {
+            if (collectors.compareAndSet(a, b as Array<ResumableCollector<T>>)) {
                 return true
             }
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun remove(inner: InnerCollector<T>) {
+    private fun remove(inner: ResumableCollector<T>) {
         while (true) {
             val a = collectors.get()
             val n = a.size
@@ -114,13 +114,13 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
                 return
             }
 
-            var b = EMPTY as Array<InnerCollector<T>?>
+            var b = EMPTY as Array<ResumableCollector<T>?>
             if (n != 1) {
                 b = Array(n - 1) { null }
                 System.arraycopy(a, 0, b, 0, j)
                 System.arraycopy(a, j + 1, b, j, n - j - 1)
             }
-            if (collectors.compareAndSet(a, b as Array<InnerCollector<T>>)) {
+            if (collectors.compareAndSet(a, b as Array<ResumableCollector<T>>)) {
                 return
             }
         }
@@ -131,37 +131,10 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
      */
     @FlowPreview
     override suspend fun collectSafely(collector: FlowCollector<T>) {
-        val inner = InnerCollector<T>()
+        val inner = ResumableCollector<T>()
         if (add(inner)) {
-            while (true) {
-
-                inner.readyConsumer()
-
-                inner.awaitSignal()
-
-                if (inner.hasValue) {
-                    val v = inner.value!!
-                    inner.value = null
-                    inner.hasValue = false
-
-                    try {
-                        collector.emit(v)
-                    } catch (exc: Throwable) {
-                        remove(inner)
-
-                        inner.readyConsumer() // unblock waiters
-                        throw exc
-                    }
-                }
-
-                if (inner.done) {
-                    val ex = inner.error;
-                    if (ex != null) {
-                        throw ex
-                    }
-                    return
-                }
-            }
+            inner.drain(collector) { remove(it) }
+            return
         }
 
         val ex = error
@@ -170,46 +143,4 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
         }
     }
 
-    private class InnerCollector<T> : Resumable() {
-        var value: T? = null
-        var error: Throwable? = null
-        var done: Boolean = false
-        var hasValue: Boolean = false
-
-        val consumerReady = Resumable()
-
-        suspend fun next(value : T) {
-            consumerReady.await()
-
-            this.value = value
-            this.hasValue = true
-
-            resume()
-        }
-
-        suspend fun error(error: Throwable) {
-            consumerReady.await()
-
-            this.error = error
-            this.done = true
-
-            resume()
-        }
-
-        suspend fun complete() {
-            consumerReady.await()
-
-            this.done = true
-
-            resume()
-        }
-
-        suspend fun awaitSignal() {
-            await()
-        }
-
-        fun readyConsumer() {
-            consumerReady.resume()
-        }
-    }
 }

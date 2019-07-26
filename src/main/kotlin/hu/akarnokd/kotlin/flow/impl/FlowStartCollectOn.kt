@@ -16,6 +16,7 @@
 
 package hu.akarnokd.kotlin.flow.impl
 
+import hu.akarnokd.kotlin.flow.ResumableCollector
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.AbstractFlow
 import kotlinx.coroutines.flow.*
@@ -26,7 +27,6 @@ import kotlin.coroutines.CoroutineContext
 @FlowPreview
 internal class FlowStartCollectOn<T>(
         val source: Flow<T>,
-        val coroutineScope: CoroutineScope,
         val coroutineDispatcher: CoroutineDispatcher) : AbstractFlow<T>() {
 
     private companion object {
@@ -35,21 +35,22 @@ internal class FlowStartCollectOn<T>(
 
     @InternalCoroutinesApi
     override suspend fun collectSafely(collector: FlowCollector<T>) {
-        val cancel = AtomicReference<Any>()
+        coroutineScope {
 
-        val job = coroutineScope.launch(coroutineDispatcher) {
-            try {
-                source.collect {
-                    collector.emit(it)
+            val inner = ResumableCollector<T>()
+
+            launch(coroutineDispatcher) {
+                try {
+                    source.collect {
+                        inner.next(it)
+                    }
+                    inner.complete()
+                } catch (ex: Throwable) {
+                    inner.error(ex)
                 }
-            } finally {
-                (cancel.getAndSet(CANCELLED) as? Job)?.cancel()
             }
-        }
-        if (!cancel.compareAndSet(null, job)) {
-            job.cancelAndJoin()
-        } else {
-            job.join()
+
+            inner.drain(collector)
         }
     }
 }
