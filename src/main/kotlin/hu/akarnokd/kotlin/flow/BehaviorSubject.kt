@@ -26,19 +26,35 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
     private var error: Throwable? = null
 
+    /**
+     * Constructs an empty BehaviorSubject.
+     */
     @Suppress("UNCHECKED_CAST")
     constructor() {
         current = Node(NONE as T)
     }
 
+    /**
+     * Constructs a BehaviorSubject with an initial value to emit
+     * to collectors.
+     */
     constructor(initialValue: T) {
         current = Node(initialValue)
     }
 
+    /**
+     * Returns true if this subject has collectors waiting for data.
+     */
     override fun hasCollectors(): Boolean = collectors.get().isNotEmpty()
 
+    /**
+     * Returns the number of collectors waiting for data.
+     */
     override fun collectorCount(): Int = collectors.get().size
 
+    /**
+     * Emit a value to all current collectors when they are ready.
+     */
     override suspend fun emit(value: T) {
         if (current != DONE) {
             val next = Node<T>(value)
@@ -53,6 +69,10 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
         }
     }
 
+    /**
+     * Signal an exception to all current and future collectors when
+     * they are ready.
+     */
     @Suppress("UNCHECKED_CAST")
     override suspend fun emitError(ex: Throwable) {
         if (current != DONE) {
@@ -68,6 +88,10 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
         }
     }
 
+    /**
+     * Signal current and future collectors that no further
+     * values will be coming.
+     */
     @Suppress("UNCHECKED_CAST")
     override suspend fun complete() {
         if (current != DONE) {
@@ -82,6 +106,11 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
         }
     }
 
+    /**
+     * Accepts a [collector] and emits the latest (if available) value
+     * and any subsequent value received by this BehaviorSubject until
+     * the BehaviorSubject gets terminated.
+     */
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         val inner = InnerCollector<T>()
         if (add(inner)) {

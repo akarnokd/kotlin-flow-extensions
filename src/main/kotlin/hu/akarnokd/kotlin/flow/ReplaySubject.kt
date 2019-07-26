@@ -24,24 +24,52 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
     private var done: Boolean = false
 
+    /**
+     * Creates a ReplaySubject with an unbounded internal buffer
+     * caching all values received via [emit].
+     */
     constructor() {
         buffer = UnboundedReplayBuffer()
     }
 
+    /**
+     * Creates a ReplaySubject that caches at most  [maxSize]
+     * values to be replayed to late collectors.
+     */
     constructor(maxSize: Int) {
         buffer = SizeBoundReplayBuffer(maxSize)
     }
 
+    /**
+     * Creates a ReplaySubject that caches values at most for
+     * the given [maxTime] real-time duration and replays
+     * those upfront to late collectors.
+     */
     constructor(maxTime: Long, unit: TimeUnit) : this(Int.MAX_VALUE, maxTime, unit)
 
+    /**
+     * Creates a ReplaySubject that caches at most [maxSize] values
+     * at most for the given [maxTime] real-time duration and
+     * replays those upfront to late collectors.
+     */
     constructor(maxSize: Int, maxTime: Long, unit: TimeUnit) : this(maxSize, maxTime, unit, {
         t -> t.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
     })
 
+    /**
+     * Creates a ReplaySubject that caches at most [maxSize] values
+     * at most for the given [maxTime] duration (measured via the custom
+     * [timeSource]) and replays those upfront to late collectors.
+     */
     constructor(maxSize: Int, maxTime: Long, unit: TimeUnit, timeSource: (TimeUnit) -> Long) {
         buffer = TimeAndSizeBoundReplayBuffer(maxSize, maxTime, unit, timeSource)
     }
 
+    /**
+     * Accepts a [collector] and emits the cached values upfront
+     * and any subsequent value received by this ReplaySubject until
+     * the ReplaySubject gets terminated.
+     */
     @FlowPreview
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         val inner = InnerCollector<T>(collector, this)
@@ -49,6 +77,9 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
         buffer.replay(inner)
     }
 
+    /**
+     * Emit a value to all current collectors when they are ready.
+     */
     override suspend fun emit(value: T) {
         if (!done) {
             buffer.emit(value)
