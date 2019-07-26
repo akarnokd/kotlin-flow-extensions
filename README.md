@@ -10,7 +10,7 @@ Extensions to the Kotlin Flow library.
 [Maven](https://search.maven.org/search?q=com.github.akarnokd)
 
 ```groovy
-dependency {
+dependencies {
     implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.1"
 }
 ```
