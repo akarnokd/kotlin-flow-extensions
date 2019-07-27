@@ -23,7 +23,7 @@ class SpscArrayQueueTest {
     @Test
     fun offerPoll()  {
         val q = SpscArrayQueue<Int>(10)
-        val a = Array<Int>(1) { 0 }
+        val a = Array<Any?>(1) { 0 }
 
         for (i in 0 until 10) {
             assertTrue(q.offer(i))
@@ -41,7 +41,7 @@ class SpscArrayQueueTest {
     @Test
     fun offerAllPollAll()  {
         val q = SpscArrayQueue<Int>(10)
-        val a = Array<Int>(1) { 0 }
+        val a = Array<Any?>(1) { 0 }
 
         for (i in 0 until 16) {
             assertTrue(q.offer(i))
@@ -67,7 +67,7 @@ class SpscArrayQueueTest {
     @Test
     fun clear() {
         val q = SpscArrayQueue<Int>(16)
-        val a = Array<Int>(1) { 0 }
+        val a = Array<Any?>(1) { 0 }
 
         for (i in 0 until 10) {
             q.offer(i)

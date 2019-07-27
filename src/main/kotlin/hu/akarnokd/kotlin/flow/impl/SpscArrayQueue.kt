@@ -22,13 +22,13 @@ import java.util.concurrent.atomic.AtomicReferenceArray
 /**
  * A Single-Producer Single-Consumer bounded queue.
  */
-internal class SpscArrayQueue<T> : AtomicReferenceArray<Any> {
+internal class SpscArrayQueue<T>(capacity: Int) : AtomicReferenceArray<Any>(nextPowerOf2(capacity)) {
 
     private val consumerIndex = AtomicLong()
 
     private val producerIndex = AtomicLong()
 
-    constructor(capacity: Int) : super(nextPowerOf2(capacity)) {
+    init {
         for (i in 0 until length()) {
             lazySet(i, EMPTY)
         }
@@ -53,7 +53,7 @@ internal class SpscArrayQueue<T> : AtomicReferenceArray<Any> {
      * Poll the next available item into the first slot of the
      * array or return false if no item is available
      */
-    fun poll(out: Array<T>) : Boolean {
+    fun poll(out: Array<Any?>) : Boolean {
         val mask = length() - 1
         val cir = consumerIndex
         val ci = cir.get()
@@ -64,7 +64,7 @@ internal class SpscArrayQueue<T> : AtomicReferenceArray<Any> {
             return false
         }
         @Suppress("UNCHECKED_CAST")
-        out[0] = v as T
+        out[0] = v
         lazySet(offset, EMPTY)
         cir.lazySet(ci + 1)
         return true
@@ -90,8 +90,8 @@ internal class SpscArrayQueue<T> : AtomicReferenceArray<Any> {
         cir.lazySet(ci)
     }
 
-    companion object {
-        val EMPTY = Object()
+    private companion object {
+        private val EMPTY = Object()
     }
 }
 
