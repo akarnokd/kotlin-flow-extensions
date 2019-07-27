@@ -63,6 +63,7 @@ test {
     maxHeapSize = "1g"
     testLogging  {
         events "started", "failed" // "skipped", "passed"
+        exceptionFormat="full"
         //    showStandardStreams = true
     }
 }
