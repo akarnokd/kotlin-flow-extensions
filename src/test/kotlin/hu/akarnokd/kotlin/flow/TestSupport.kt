@@ -57,15 +57,15 @@ suspend fun <T> Flow<T>.assertResult(vararg values: T) {
 }
 
 suspend fun <T> Flow<T>.assertResultSet(vararg values: T) {
-    val list = HashSet<T>()
+    val set = HashSet<T>()
 
     this.collect {
-        list.add(it)
+        set.add(it)
     }
 
-    assertEquals(values.size, list.size)
+    assertEquals("Number of values differ", values.size, set.size)
 
-    values.forEach { assertTrue("" + it, list.contains(it)) }
+    values.forEach { assertTrue("Missing: " + it, set.contains(it)) }
 }
 
 suspend fun <T, E : Throwable> Flow<T>.assertFailure(errorClazz: Class<E>, vararg values: T) {

@@ -28,6 +28,7 @@ Table of contents
   - `timer`
 - Intermediate Flow operators (`FlowExtensions`)
   - `Flow.concatWith`
+  - `Flow.groupBy`
   - `Flow.parallel`
   - `Flow.publish`
   - `Flow.replay`

@@ -127,6 +127,37 @@ fun timer(timeout: Long, unit: TimeUnit) : Flow<Long> =
             delay(unit.toMillis(timeout))
             emit(0L)
         }
+
+/**
+ * Groups the upstream values into their own Flows keyed by the value returned
+ * by the [keySelector] function.
+ */
+@FlowPreview
+fun <T, K> Flow<T>.groupBy(keySelector: suspend (T) -> K) : Flow<GroupedFlow<K, T>> =
+        FlowGroupBy(this, keySelector, { it })
+
+/**
+ * Groups the mapped upstream values into their own Flows keyed by the value returned
+ * by the [keySelector] function.
+ */
+@FlowPreview
+fun <T, K, V> Flow<T>.groupBy(keySelector: suspend (T) -> K, valueSelector: suspend (T) -> V) : Flow<GroupedFlow<K, V>> =
+        FlowGroupBy(this, keySelector, valueSelector)
+
+/**
+ * Collects all items of the upstream into a list.
+ */
+fun <T> Flow<T>.toList() : Flow<List<T>> {
+    val self = this
+    return flow {
+        val list = ArrayList<T>()
+        self.collect {
+            list.add(it)
+        }
+        emit(list)
+    }
+}
+
 // -----------------------------------------------------------------------------------------
 // Parallel Extensions
 // -----------------------------------------------------------------------------------------
