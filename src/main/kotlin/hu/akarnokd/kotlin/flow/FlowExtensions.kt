@@ -18,11 +18,10 @@ package hu.akarnokd.kotlin.flow
 
 import hu.akarnokd.kotlin.flow.impl.*
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -134,3 +133,29 @@ fun <T> ParallelFlow<T>.filter(predicate: suspend (T) -> Boolean) : ParallelFlow
  */
 fun <T, R> ParallelFlow<T>.transform(callback: suspend FlowCollector<R>.(T) -> Unit) : ParallelFlow<R> =
         FlowParallelTransform(this, callback)
+
+
+/**
+ * Maps the upstream value on each rail onto a Flow and emits their values
+ * in order on the same rail.
+ */
+@ExperimentalCoroutinesApi
+fun <T, R> ParallelFlow<T>.concatMap(mapper: suspend (T) -> Flow<R>) : ParallelFlow<R> =
+        FlowParallelTransform(this) {
+            emitAll(mapper(it))
+        }
+
+/**
+ * Reduces the source items into a single value on each rail
+ * and emits those.
+ */
+fun <T, R> ParallelFlow<T>.reduce(seed: suspend () -> R, combine: suspend (R, T) -> R) : ParallelFlow<R> =
+        FlowParallelReduce(this, seed, combine)
+
+/**
+ * Reduce the values within the parallel rails and
+ * then reduce the rails to a single result value.
+ */
+@FlowPreview
+fun <T> ParallelFlow<T>.reduce(combine: suspend (T, T) -> T) : Flow<T> =
+        FlowParallelReduceSequential(this, combine)

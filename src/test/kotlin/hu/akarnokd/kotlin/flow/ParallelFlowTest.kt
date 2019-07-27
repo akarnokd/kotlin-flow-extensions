@@ -58,30 +58,6 @@ class ParallelFlowTest {
     }
 
     @Test
-    fun map() = runBlocking {
-        withParallels(1) { execs ->
-            arrayOf(1, 2, 3, 4, 5)
-                    .asFlow()
-                    .parallel(execs.size) { execs[it] }
-                    .map { it + 1 }
-                    .sequential()
-                    .assertResult(2, 3, 4, 5, 6)
-        }
-    }
-
-    @Test
-    fun map2() = runBlocking {
-        withParallels(2) { execs ->
-            arrayOf(1, 2, 3, 4, 5)
-                    .asFlow()
-                    .parallel(execs.size) { execs[it] }
-                    .map { it + 1 }
-                    .sequential()
-                    .assertResultSet(2, 3, 4, 5, 6)
-        }
-    }
-
-    @Test
     fun filter() = runBlocking {
         withParallels(1) { execs ->
             arrayOf(1, 2, 3, 4, 5)

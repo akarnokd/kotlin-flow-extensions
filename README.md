@@ -24,16 +24,18 @@ Table of contents
   - [ReplaySubject](#replaysubject)
   - [BehaviorSubject](#behaviorsubject)
 - Intermediate Flow operators (`FlowExtensions`)
+  - `Flow.concatWith`
+  - `Flow.parallel`
   - `Flow.publish`
   - `Flow.replay`
   - `Flow.startCollectOn`
-  - `Flow.concatWith`
-  - `Flow.parallel`
 - `ParallelFlow` operators (`FlowExtensions`)
-  - `ParallelFlow.map`
+  - `ParallelFlow.concatMap`
   - `ParallelFlow.filter`
-  - `ParallelFlow.transform`
+  - `ParallelFlow.map`
+  - `ParallelFlow.reduce`
   - `ParallelFlow.sequential`
+  - `ParallelFlow.transform`
 - `ConnectableFlow`
   
 ## PublishSubject

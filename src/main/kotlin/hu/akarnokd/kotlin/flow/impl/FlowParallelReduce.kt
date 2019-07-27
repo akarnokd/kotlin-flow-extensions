@@ -20,27 +20,42 @@ import hu.akarnokd.kotlin.flow.ParallelFlow
 import kotlinx.coroutines.flow.FlowCollector
 
 /**
- * Maps values in parallel.
+ * Reduces the source items into a single value on each rail
+ * and emits those.
  */
-internal class FlowParallelMap<T, R>(
+internal class FlowParallelReduce<T, R>(
         private val source: ParallelFlow<T>,
-        private val mapper: suspend (T) -> R
+        private val seed: suspend () -> R,
+        private val combine: suspend (R, T) -> R
 ) : ParallelFlow<R> {
-
     override val parallelism: Int
         get() = source.parallelism
 
     override suspend fun collect(vararg collectors: FlowCollector<R>) {
         val n = parallelism
 
-        val rails = Array(n) { i -> MapperCollector(collectors[i], mapper) }
+        val rails = Array(n) { ReducerCollector(combine) }
+
+        // Array constructor doesn't support suspendable initializer?
+        for (i in 0 until n) {
+            rails[i].accumulator = seed()
+        }
 
         source.collect(*rails)
-    }
 
-    private class MapperCollector<T, R>(val collector: FlowCollector<R>, val mapper: suspend (T) -> R) : FlowCollector<T> {
-        override suspend fun emit(value: T) {
-            collector.emit(mapper(value))
+        for (i in 0 until n) {
+            collectors[i].emit(rails[i].accumulator)
         }
     }
+
+    class ReducerCollector<T, R>(private val combine: suspend (R, T) -> R) : FlowCollector<T> {
+
+        @Suppress("UNCHECKED_CAST")
+        var accumulator : R = null as R
+
+        override suspend fun emit(value: T) {
+            accumulator = combine(accumulator, value)
+        }
+    }
+
 }
