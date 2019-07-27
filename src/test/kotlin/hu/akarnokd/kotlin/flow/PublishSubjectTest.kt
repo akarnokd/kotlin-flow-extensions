@@ -32,9 +32,9 @@ class PublishSubjectTest {
     @Test
     fun basicCreate() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>();
+            val subject = PublishSubject<Int>()
 
-            val result = ArrayList<Int>();
+            val result = ArrayList<Int>()
 
             val job = launch(it.asCoroutineDispatcher()) {
                 subject.collect {
@@ -64,7 +64,7 @@ class PublishSubjectTest {
     fun lotsOfItems() = runBlocking {
 
         withSingle {
-            val subject = PublishSubject<Int>();
+            val subject = PublishSubject<Int>()
 
             val n = 100_000
 
@@ -94,7 +94,7 @@ class PublishSubjectTest {
     @Test
     fun error()  = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>();
+            val subject = PublishSubject<Int>()
 
             val counter = AtomicInteger()
             val exc = AtomicReference<Throwable>()
@@ -105,7 +105,7 @@ class PublishSubjectTest {
                         counter.lazySet(counter.get() + 1)
                     }
                 } catch (ex: Throwable) {
-                    exc.set(ex);
+                    exc.set(ex)
                 }
             }
 
@@ -125,7 +125,7 @@ class PublishSubjectTest {
     @Test
     fun multiConsumer() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>();
+            val subject = PublishSubject<Int>()
 
             val n = 10_000
 
@@ -164,7 +164,7 @@ class PublishSubjectTest {
     @Test
     fun multiConsumerWithDelay() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>();
+            val subject = PublishSubject<Int>()
 
             val n = 10
 
@@ -205,7 +205,7 @@ class PublishSubjectTest {
     @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun multiConsumerTake() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>();
+            val subject = PublishSubject<Int>()
 
             val n = 10
 
@@ -244,7 +244,7 @@ class PublishSubjectTest {
 
     @Test
     fun alreadyCompleted()  = runBlocking {
-        val subject = PublishSubject<Int>();
+        val subject = PublishSubject<Int>()
         subject.complete()
 
         val counter1 = AtomicInteger()
@@ -258,7 +258,7 @@ class PublishSubjectTest {
 
     @Test
     fun alreadyErrored()  = runBlocking {
-        val subject = PublishSubject<Int>();
+        val subject = PublishSubject<Int>()
         subject.emitError(IOException())
 
         val counter1 = AtomicInteger()

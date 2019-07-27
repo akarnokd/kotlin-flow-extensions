@@ -88,7 +88,7 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
      */
     @FlowPreview
     override suspend fun collectSafely(collector: FlowCollector<T>) {
-        val inner = InnerCollector<T>(collector, this)
+        val inner = InnerCollector(collector, this)
         add(inner)
         buffer.replay(inner)
     }

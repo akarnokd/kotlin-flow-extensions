@@ -29,7 +29,7 @@ import kotlin.coroutines.suspendCoroutine
 open class Resumable : AtomicReference<Continuation<Any>>() {
 
     private companion object {
-        val READY = ReadyContinuation();
+        val READY = ReadyContinuation()
         val VALUE = Object()
     }
 

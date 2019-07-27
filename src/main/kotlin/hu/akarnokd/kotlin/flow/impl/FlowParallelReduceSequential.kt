@@ -34,7 +34,7 @@ internal class FlowParallelReduceSequential<T>(
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         val n = source.parallelism
 
-        val rails = Array(n) { i -> ReducerCollector(combine) }
+        val rails = Array(n) { ReducerCollector(combine) }
 
         source.collect(*rails)
 

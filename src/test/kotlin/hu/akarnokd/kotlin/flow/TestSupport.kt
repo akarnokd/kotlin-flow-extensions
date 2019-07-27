@@ -18,11 +18,11 @@ package hu.akarnokd.kotlin.flow
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import org.junit.Assert.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.reflect.KClass
 
 /**
  * Execute a suspendable block with a single-threaded executor service.

@@ -27,10 +27,10 @@ open class ResumableCollector<T> : Resumable() {
     @Suppress("UNCHECKED_CAST")
     var value: T = null as T
     var error: Throwable? = null
-    var done: Boolean = false
-    var hasValue: Boolean = false
+    private var done: Boolean = false
+    private var hasValue: Boolean = false
 
-    val consumerReady = Resumable()
+    private val consumerReady = Resumable()
 
     suspend fun next(value : T) {
         consumerReady.await()
@@ -58,11 +58,11 @@ open class ResumableCollector<T> : Resumable() {
         resume()
     }
 
-    suspend fun awaitSignal() {
+    private suspend fun awaitSignal() {
         await()
     }
 
-    fun readyConsumer() {
+    private fun readyConsumer() {
         consumerReady.resume()
     }
 

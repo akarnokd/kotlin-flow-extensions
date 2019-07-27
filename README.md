@@ -23,12 +23,16 @@ Table of contents
   - [PublishSubject](#publishsubject)
   - [ReplaySubject](#replaysubject)
   - [BehaviorSubject](#behaviorsubject)
+- Sources
+  - `range`
+  - `timer`
 - Intermediate Flow operators (`FlowExtensions`)
   - `Flow.concatWith`
   - `Flow.parallel`
   - `Flow.publish`
   - `Flow.replay`
   - `Flow.startCollectOn`
+  - `Flow.takeUntil`
 - `ParallelFlow` operators (`FlowExtensions`)
   - `ParallelFlow.concatMap`
   - `ParallelFlow.filter`

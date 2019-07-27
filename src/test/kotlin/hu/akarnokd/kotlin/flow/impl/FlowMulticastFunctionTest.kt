@@ -20,12 +20,12 @@ import hu.akarnokd.kotlin.flow.assertResult
 import hu.akarnokd.kotlin.flow.concatWith
 import hu.akarnokd.kotlin.flow.publish
 import hu.akarnokd.kotlin.flow.replay
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import org.junit.Ignore
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 @FlowPreview
 class FlowMulticastFunctionTest {

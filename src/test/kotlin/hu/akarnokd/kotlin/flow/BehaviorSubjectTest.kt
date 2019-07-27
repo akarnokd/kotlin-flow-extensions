@@ -32,9 +32,9 @@ class BehaviorSubjectTest {
     @Test
     fun basicCreate() = runBlocking {
         withSingle {
-            val subject = BehaviorSubject<Int>();
+            val subject = BehaviorSubject<Int>()
 
-            val result = ArrayList<Int>();
+            val result = ArrayList<Int>()
 
             val job = launch(it.asCoroutineDispatcher()) {
                 subject.collect {
@@ -64,7 +64,7 @@ class BehaviorSubjectTest {
     fun lotsOfItems() = runBlocking {
 
         withSingle {
-            val subject = BehaviorSubject<Int>();
+            val subject = BehaviorSubject<Int>()
 
             val n = 100_000
 
@@ -94,7 +94,7 @@ class BehaviorSubjectTest {
     @Test
     fun error()  = runBlocking {
         withSingle {
-            val subject = BehaviorSubject<Int>();
+            val subject = BehaviorSubject<Int>()
 
             val counter = AtomicInteger()
             val exc = AtomicReference<Throwable>()
@@ -105,7 +105,7 @@ class BehaviorSubjectTest {
                         counter.lazySet(counter.get() + 1)
                     }
                 } catch (ex: Throwable) {
-                    exc.set(ex);
+                    exc.set(ex)
                 }
             }
 
@@ -125,7 +125,7 @@ class BehaviorSubjectTest {
     @Test
     fun multiConsumer() = runBlocking {
         withSingle {
-            val subject = BehaviorSubject<Int>();
+            val subject = BehaviorSubject<Int>()
 
             val n = 10_000
 
@@ -164,7 +164,7 @@ class BehaviorSubjectTest {
     @Test
     fun multiConsumerWithDelay() = runBlocking {
         withSingle {
-            val subject = BehaviorSubject<Int>();
+            val subject = BehaviorSubject<Int>()
 
             val n = 10
 
@@ -205,7 +205,7 @@ class BehaviorSubjectTest {
     @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun multiConsumerTake() = runBlocking {
         withSingle {
-            val subject = BehaviorSubject<Int>();
+            val subject = BehaviorSubject<Int>()
 
             val n = 10
 
@@ -244,7 +244,7 @@ class BehaviorSubjectTest {
 
     @Test
     fun alreadyCompleted()  = runBlocking {
-        val subject = BehaviorSubject<Int>();
+        val subject = BehaviorSubject<Int>()
         subject.complete()
 
         val counter1 = AtomicInteger()
@@ -258,7 +258,7 @@ class BehaviorSubjectTest {
 
     @Test
     fun alreadyErrored()  = runBlocking {
-        val subject = BehaviorSubject<Int>();
+        val subject = BehaviorSubject<Int>()
         subject.emitError(IOException())
 
         val counter1 = AtomicInteger()
@@ -278,9 +278,9 @@ class BehaviorSubjectTest {
     @Test
     fun basicWithInitial() = runBlocking {
         withSingle {
-            val subject = BehaviorSubject<Int>(0);
+            val subject = BehaviorSubject(0)
 
-            val result = ArrayList<Int>();
+            val result = ArrayList<Int>()
 
             val job = launch(it.asCoroutineDispatcher()) {
                 subject.collect {
@@ -310,9 +310,9 @@ class BehaviorSubjectTest {
     @Test
     fun takeWithInitial() = runBlocking {
         withSingle {
-            val subject = BehaviorSubject<Int>(0);
+            val subject = BehaviorSubject(0)
 
-            val result = ArrayList<Int>();
+            val result = ArrayList<Int>()
 
             val job = launch(it.asCoroutineDispatcher()) {
                 subject.take(1).collect {
@@ -341,9 +341,9 @@ class BehaviorSubjectTest {
     @Test
     fun nullInitial() = runBlocking {
         withSingle {
-            val subject = BehaviorSubject<Any?>(null);
+            val subject = BehaviorSubject<Any?>(null)
 
-            val result = ArrayList<Any?>();
+            val result = ArrayList<Any?>()
 
             val job = launch(it.asCoroutineDispatcher()) {
                 subject.collect {

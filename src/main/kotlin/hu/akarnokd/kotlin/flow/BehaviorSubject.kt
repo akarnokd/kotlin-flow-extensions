@@ -28,14 +28,14 @@ import java.util.concurrent.atomic.AtomicReference
 class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
     private companion object {
-        private val EMPTY = arrayOf<InnerCollector<Any>>()
-        private val TERMINATED = arrayOf<InnerCollector<Any>>()
+        private val EMPTY = arrayOf<InnerCollector>()
+        private val TERMINATED = arrayOf<InnerCollector>()
         private val NONE = Object()
-        private val DONE = Node<Any>(NONE);
+        private val DONE = Node<Any>(NONE)
     }
 
     @Suppress("UNCHECKED_CAST")
-    private val collectors = AtomicReference(EMPTY as Array<InnerCollector<T>>)
+    private val collectors = AtomicReference(EMPTY)
 
     @Volatile
     private var current: Node<T>
@@ -73,7 +73,7 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
      */
     override suspend fun emit(value: T) {
         if (current != DONE) {
-            val next = Node<T>(value)
+            val next = Node(value)
             current.set(next)
             current = next
 
@@ -96,7 +96,7 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
             current.set(DONE as Node<T>)
             current = DONE
 
-            for (collector in collectors.getAndSet(TERMINATED as Array<InnerCollector<T>>)) {
+            for (collector in collectors.getAndSet(TERMINATED)) {
                 collector.consumeReady.await()
 
                 collector.resume()
@@ -114,7 +114,7 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
             current.set(DONE as Node<T>)
             current = DONE
 
-            for (collector in collectors.getAndSet(TERMINATED as Array<InnerCollector<T>>)) {
+            for (collector in collectors.getAndSet(TERMINATED)) {
                 collector.consumeReady.await()
 
                 collector.resume()
@@ -128,7 +128,7 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
      * the BehaviorSubject gets terminated.
      */
     override suspend fun collectSafely(collector: FlowCollector<T>) {
-        val inner = InnerCollector<T>()
+        val inner = InnerCollector()
         if (add(inner)) {
             var curr = current
 
@@ -178,7 +178,7 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
     }
 
     @Suppress("UNCHECKED_CAST", "")
-    private fun add(inner: InnerCollector<T>) : Boolean {
+    private fun add(inner: InnerCollector) : Boolean {
         while (true) {
 
             val a = collectors.get()
@@ -188,14 +188,14 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
             val n = a.size
             val b = a.copyOf(n + 1)
             b[n] = inner
-            if (collectors.compareAndSet(a, b as Array<InnerCollector<T>>)) {
+            if (collectors.compareAndSet(a, b as Array<InnerCollector>)) {
                 return true
             }
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun remove(inner: InnerCollector<T>) {
+    private fun remove(inner: InnerCollector) {
         while (true) {
             val a = collectors.get()
             val n = a.size
@@ -208,13 +208,13 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
                 return
             }
 
-            var b = EMPTY as Array<InnerCollector<T>?>
+            var b = EMPTY as Array<InnerCollector?>
             if (n != 1) {
                 b = Array(n - 1) { null }
                 System.arraycopy(a, 0, b, 0, j)
                 System.arraycopy(a, j + 1, b, j, n - j - 1)
             }
-            if (collectors.compareAndSet(a, b as Array<InnerCollector<T>>)) {
+            if (collectors.compareAndSet(a, b as Array<InnerCollector>)) {
                 return
             }
         }
@@ -223,11 +223,9 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
     /**
      * The collector wrapper that hosts the resumables, "this" is for the valueReady
      */
-    private class InnerCollector<T> : Resumable() {
+    private class InnerCollector : Resumable() {
         val consumeReady = Resumable()
     }
 
-    private class Node<T>(val value: T) : AtomicReference<Node<T>>() {
-
-    }
+    private class Node<T>(val value: T) : AtomicReference<Node<T>>()
 }

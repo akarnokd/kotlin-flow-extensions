@@ -17,21 +17,41 @@
 package hu.akarnokd.kotlin.flow.impl
 
 import hu.akarnokd.kotlin.flow.assertResult
-import hu.akarnokd.kotlin.flow.startCollectOn
-import kotlinx.coroutines.Dispatchers
+import hu.akarnokd.kotlin.flow.range
+import hu.akarnokd.kotlin.flow.takeUntil
+import hu.akarnokd.kotlin.flow.timer
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 
 @FlowPreview
-class FlowStartCollectOnTest {
+class FlowTakeUntilTest {
     @Test
     fun basic() = runBlocking {
 
-        arrayOf(1, 2, 3, 4, 5)
-                .asFlow()
-                .startCollectOn(Dispatchers.IO)
+        range(1, 10)
+                .map {
+                    delay(100)
+                    it
+                }
+                .takeUntil(timer(550, TimeUnit.MILLISECONDS))
                 .assertResult(1, 2, 3, 4, 5)
+
+    }
+
+    @Test
+    fun untilTakesLonger() = runBlocking {
+
+        range(1, 10)
+                .map {
+                    delay(50)
+                    it
+                }
+                .takeUntil(timer(1000, TimeUnit.MILLISECONDS))
+                .assertResult(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
     }
 }

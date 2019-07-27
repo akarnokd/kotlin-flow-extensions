@@ -19,19 +19,14 @@ package hu.akarnokd.kotlin.flow.impl
 import hu.akarnokd.kotlin.flow.ResumableCollector
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.AbstractFlow
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.flow.collect
 
 @FlowPreview
 internal class FlowStartCollectOn<T>(
         val source: Flow<T>,
-        val coroutineDispatcher: CoroutineDispatcher) : AbstractFlow<T>() {
-
-    private companion object {
-        val CANCELLED = Object()
-    }
+        private val coroutineDispatcher: CoroutineDispatcher) : AbstractFlow<T>() {
 
     @InternalCoroutinesApi
     override suspend fun collectSafely(collector: FlowCollector<T>) {

@@ -20,6 +20,7 @@ import hu.akarnokd.kotlin.flow.impl.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.TimeUnit
 
@@ -99,6 +100,36 @@ fun <T> Flow<T>.concatWith(other: Flow<T>) : Flow<T> {
         }
     }
 }
+
+/**
+ * Consumes the main source until the other source emits an item or completes.
+ */
+@FlowPreview
+fun <T, U> Flow<T>.takeUntil(other: Flow<U>) : Flow<T> =
+        FlowTakeUntil(this, other)
+
+/**
+ * Generates a range of ever increasing integer values.
+ */
+fun range(start: Int, count: Int) : Flow<Int> =
+        flow {
+            val end = start + count
+            for (i in start until end) {
+                emit(i)
+            }
+        }
+
+/**
+ * Signal 0L after the given time passed
+ */
+fun timer(timeout: Long, unit: TimeUnit) : Flow<Long> =
+        flow {
+            delay(unit.toMillis(timeout))
+            emit(0L)
+        }
+// -----------------------------------------------------------------------------------------
+// Parallel Extensions
+// -----------------------------------------------------------------------------------------
 
 /**
  * Consumes the upstream and dispatches individual items to a parrallel rail

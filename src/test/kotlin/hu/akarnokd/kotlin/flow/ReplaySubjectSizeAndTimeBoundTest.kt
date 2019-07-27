@@ -352,7 +352,7 @@ class ReplaySubjectSizeAndTimeBoundTest {
             result.add(it)
         }
 
-        assertEquals(listOf<Int>(4, 5), result)
+        assertEquals(listOf(4, 5), result)
     }
 
     @Test
