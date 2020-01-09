@@ -88,7 +88,8 @@ open class ResumableCollector<T> : Resumable() {
                     } else {
                         onComplete?.invoke(this)
                         throw CancellationException()
-                    }                } catch (exc: Throwable) {
+                    }
+                } catch (exc: Throwable) {
                     onComplete?.invoke(this)
 
                     readyConsumer() // unblock waiters
