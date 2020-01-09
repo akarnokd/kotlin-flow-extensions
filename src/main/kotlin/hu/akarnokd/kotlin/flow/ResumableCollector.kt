@@ -16,7 +16,10 @@
 
 package hu.akarnokd.kotlin.flow
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.isActive
+import kotlin.coroutines.coroutineContext
 
 /**
  * A collector that hosts a signal (value/error/completion)
@@ -66,7 +69,7 @@ open class ResumableCollector<T> : Resumable() {
         consumerReady.resume()
     }
 
-    suspend fun drain(collector: FlowCollector<T>, onCrash: ((ResumableCollector<T>) -> Unit)? = null) {
+    suspend fun drain(collector: FlowCollector<T>, onComplete: ((ResumableCollector<T>) -> Unit)? = null) {
         while (true) {
 
             readyConsumer()
@@ -80,9 +83,13 @@ open class ResumableCollector<T> : Resumable() {
                 hasValue = false
 
                 try {
-                    collector.emit(v)
-                } catch (exc: Throwable) {
-                    onCrash?.invoke(this)
+                    if (coroutineContext.isActive) {
+                        collector.emit(v)
+                    } else {
+                        onComplete?.invoke(this)
+                        throw CancellationException()
+                    }                } catch (exc: Throwable) {
+                    onComplete?.invoke(this)
 
                     readyConsumer() // unblock waiters
                     throw exc
