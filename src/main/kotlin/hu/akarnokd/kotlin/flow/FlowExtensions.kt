@@ -158,6 +158,19 @@ fun <T> Flow<T>.toList() : Flow<List<T>> {
     }
 }
 
+/***
+ * Enable [catch] multiple times after it encounters an error.
+ *
+ * flow {
+ *    ...
+ * }.mapToNextCatch { t1 -> Throwable2(...) }
+ * .mapToNextCatch { t2 -> Throwable3(...) }
+ * .catch { t3 -> ... }
+ */
+@ExperimentalCoroutinesApi
+fun <T> Flow<T>.mapToNextCatch(errorMap: (Throwable) -> Throwable): Flow<T> =
+        catch { throw errorMap(it) }
+
 // -----------------------------------------------------------------------------------------
 // Parallel Extensions
 // -----------------------------------------------------------------------------------------
