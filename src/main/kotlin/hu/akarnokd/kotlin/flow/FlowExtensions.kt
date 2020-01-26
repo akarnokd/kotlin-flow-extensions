@@ -158,6 +158,12 @@ fun <T> Flow<T>.toList() : Flow<List<T>> {
     }
 }
 
+/**
+ * Drops items from the upstream when the downstream is not ready to receive them.
+ */
+@FlowPreview
+fun <T> Flow<T>.onBackpressurureDrop() : Flow<T> = FlowOnBackpressureDrop(this)
+
 // -----------------------------------------------------------------------------------------
 // Parallel Extensions
 // -----------------------------------------------------------------------------------------
