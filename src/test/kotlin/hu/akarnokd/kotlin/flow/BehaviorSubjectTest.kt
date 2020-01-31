@@ -392,7 +392,7 @@ class BehaviorSubjectTest {
 
             // wait for the subject to finish
             for (i in 1..1000) {
-                if (job1.isCancelled) {
+                if (job1.isCancelled && subject.collectorCount() == 0) {
                     break;
                 }
                 delay(10)
