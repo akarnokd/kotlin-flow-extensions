@@ -11,7 +11,7 @@ Extensions to the Kotlin Flow library.
 
 ```groovy
 dependencies {
-    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.2"
+    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.3"
 }
 ```
 
@@ -34,6 +34,8 @@ Table of contents
   - `Flow.replay`
   - `Flow.startCollectOn`
   - `Flow.takeUntil`
+  - `Flow.onBackpressureDrop`
+  - [`Flow.flatMapDrop`](#flowflatmapdrop)
 - `ParallelFlow` operators (`FlowExtensions`)
   - `ParallelFlow.concatMap`
   - `ParallelFlow.filter`
@@ -150,3 +152,33 @@ runBlocking {
     job.join()
 }
 ```
+
+## Flow.flatMapDrop
+
+Maps the upstream value into a `Flow` and relays its items while ignoring further upstream items until the current
+inner `Flow` completes.
+
+```kotlin
+import hu.akarnokd.kotlin.flow.*
+
+range(1, 10)
+.map {
+    delay(100)
+    it
+}
+.flatMapDrop {
+    range(it * 100, 5)
+            .map {
+                delay(30)
+                it
+            }
+}
+.assertResult(
+        100, 101, 102, 103, 104,
+        300, 301, 302, 303, 304,
+        500, 501, 502, 503, 504,
+        700, 701, 702, 703, 704,
+        900, 901, 902, 903, 904
+)
+```
+

@@ -16,11 +16,14 @@
 
 package hu.akarnokd.kotlin.flow
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.AbstractFlow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.isActive
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.coroutineContext
 
 /**
  * Caches and replays some or all items to collectors.
@@ -240,8 +243,12 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
                 if (!empty) {
                     try {
-                        consumer.consumer.emit(list[consumer.index.toInt()])
-                        consumer.index++
+                        if (coroutineContext.isActive) {
+                            consumer.consumer.emit(list[consumer.index.toInt()])
+                            consumer.index++
+                        } else {
+                            throw CancellationException()
+                        }
                     } catch (ex: Throwable) {
                         consumer.parent.remove(consumer)
 
@@ -317,8 +324,12 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
                 if (!empty) {
                     try {
-                        consumer.consumer.emit(next.value!!)
-                        consumer.node = next
+                        if (coroutineContext.isActive) {
+                            consumer.consumer.emit(next.value!!)
+                            consumer.node = next
+                        } else {
+                            throw CancellationException()
+                        }
                     } catch (ex: Throwable) {
                         consumer.parent.remove(consumer)
 
@@ -435,8 +446,12 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
                 if (!empty) {
                     try {
-                        consumer.consumer.emit(next.value!!)
-                        consumer.node = next
+                        if (coroutineContext.isActive) {
+                            consumer.consumer.emit(next.value!!)
+                            consumer.node = next
+                        } else {
+                            throw CancellationException()
+                        }
                     } catch (ex: Throwable) {
                         consumer.parent.remove(consumer)
 

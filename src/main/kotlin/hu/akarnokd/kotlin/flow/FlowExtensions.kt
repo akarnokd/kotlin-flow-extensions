@@ -164,6 +164,13 @@ fun <T> Flow<T>.toList() : Flow<List<T>> {
 @FlowPreview
 fun <T> Flow<T>.onBackpressurureDrop() : Flow<T> = FlowOnBackpressureDrop(this)
 
+/**
+ * Maps items from the upstream to [Flow] and relays its items while dropping upstream items
+ * until the current inner [Flow] completes.
+ */
+@FlowPreview
+fun <T, R> Flow<T>.flatMapDrop(mapper: suspend (T) -> Flow<R>) : Flow<R> = FlowFlatMapDrop(this, mapper)
+
 // -----------------------------------------------------------------------------------------
 // Parallel Extensions
 // -----------------------------------------------------------------------------------------

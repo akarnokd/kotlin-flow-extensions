@@ -301,6 +301,14 @@ class PublishSubjectTest {
                 subject.emit(i)
             }
 
+            // wait for the subject to finish
+            for (i in 1..1000) {
+                if (job1.isCancelled) {
+                    break;
+                }
+                delay(10)
+            }
+
             assertEquals(true, job1.isCancelled)
             assertEquals(expected, counter1.get())
             assertEquals(0, subject.collectorCount())

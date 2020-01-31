@@ -16,10 +16,13 @@
 
 package hu.akarnokd.kotlin.flow
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.AbstractFlow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.isActive
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.coroutineContext
 
 /**
  * Caches one item and replays it to fresh collectors.
@@ -134,7 +137,11 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
 
             if (curr.value != NONE) {
                 try {
-                    collector.emit(curr.value)
+                    if (coroutineContext.isActive) {
+                        collector.emit(curr.value)
+                    } else {
+                        throw CancellationException()
+                    }
                 } catch (exc: Throwable) {
                     remove(inner)
 
@@ -160,7 +167,11 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
                 }
 
                 try {
-                    collector.emit(next.value)
+                    if (coroutineContext.isActive) {
+                        collector.emit(next.value)
+                    } else {
+                        throw CancellationException()
+                    }
                 } catch (exc: Throwable) {
                     remove(inner)
 

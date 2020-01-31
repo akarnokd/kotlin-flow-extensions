@@ -86,7 +86,6 @@ open class ResumableCollector<T> : Resumable() {
                     if (coroutineContext.isActive) {
                         collector.emit(v)
                     } else {
-                        onComplete?.invoke(this)
                         throw CancellationException()
                     }
                 } catch (exc: Throwable) {

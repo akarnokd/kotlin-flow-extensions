@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package hu.akarnokd.kotlin.flow.impl
 
 import hu.akarnokd.kotlin.flow.Resumable
@@ -26,49 +25,66 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 @FlowPreview
-internal class FlowOnBackpressureDrop<T>(private val source: Flow<T>) : AbstractFlow<T>() {
+internal class FlowFlatMapDrop<T, R>(private val source: Flow<T>, private val mapper: suspend (T) -> Flow<R>) : AbstractFlow<R>() {
     @ExperimentalCoroutinesApi
     @InternalCoroutinesApi
-    override suspend fun collectSafely(collector: FlowCollector<T>) {
+    override suspend fun collectSafely(collector: FlowCollector<R>) {
         coroutineScope {
-            val consumerReady = AtomicBoolean()
-            val producerReady = Resumable()
-            val value = AtomicReference<T>()
-            val done = AtomicBoolean()
-            val error = AtomicReference<Throwable>();
 
-            launch {
+            val resume = Resumable();
+            val consumerReady = AtomicBoolean(true)
+            val value = AtomicReference<T>()
+            val hasValue = AtomicBoolean()
+            val done = AtomicBoolean()
+            val error = AtomicReference<Throwable>()
+
+            val job = launch {
                 try {
                     source.collect {
                         if (consumerReady.get()) {
-                            value.set(it);
-                            consumerReady.set(false);
-                            producerReady.resume();
+                            consumerReady.set(false)
+                            value.lazySet(it)
+                            hasValue.set(true);
+                            resume.resume()
                         }
                     }
                     done.set(true)
                 } catch (ex: Throwable) {
                     error.set(ex)
                 }
-                producerReady.resume()
+                resume.resume()
             }
 
-            while (true) {
-                consumerReady.set(true)
-                producerReady.await()
+            while (coroutineContext.isActive) {
+                resume.await()
 
                 val d = done.get()
-                val ex = error.get()
-                val v = value.getAndSet(null)
+                val e = error.get()
+                val h = hasValue.get()
+                val v = value.get()
 
-                if (ex != null) {
-                    throw ex;
+                if (e != null && !h) {
+                    throw e;
                 }
-                if (d) {
+
+                if (d && !h) {
                     break;
                 }
 
-                collector.emit(v)
+                if (h) {
+                    value.lazySet(null)
+                    hasValue.set(false)
+                    try {
+                        mapper(v).collect {
+                            collector.emit(it)
+                        }
+                    } catch (ex: Throwable) {
+                        job.cancel()
+                        throw ex
+                    }
+                }
+
+                consumerReady.set(true);
             }
         }
     }

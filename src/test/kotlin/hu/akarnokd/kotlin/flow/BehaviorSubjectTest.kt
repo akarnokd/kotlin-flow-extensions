@@ -363,4 +363,88 @@ class BehaviorSubjectTest {
             assertEquals<Any?>(listOf(null), result)
         }
     }
+
+    @Test
+    fun cancelledConsumer() = runBlocking {
+        withSingle {
+            val subject = BehaviorSubject<Int>()
+
+            val expected = 3
+            val n = 10
+
+            val counter1 = AtomicInteger()
+
+            val job1 = launch(it.asCoroutineDispatcher()) {
+                subject.collect {
+                    if (counter1.incrementAndGet() == expected) {
+                        cancel()
+                    }
+                }
+            }
+
+            while (!subject.hasCollectors()) {
+                delay(1)
+            }
+
+            for (i in 1..n) {
+                subject.emit(i)
+            }
+
+            // wait for the subject to finish
+            for (i in 1..1000) {
+                if (job1.isCancelled) {
+                    break;
+                }
+                delay(10)
+            }
+
+            assertEquals(true, job1.isCancelled)
+            assertEquals(expected, counter1.get())
+            assertEquals(0, subject.collectorCount())
+        }
+
+    }
+
+    @Test
+    fun cancelledOneCollectorSecondCompletes() = runBlocking {
+        withSingle {
+            val subject = BehaviorSubject<Int>()
+
+            val expected = 3
+            val n = 10
+
+            val counter1 = AtomicInteger()
+            val counter2 = AtomicInteger()
+
+            val job1 = launch(it.asCoroutineDispatcher()) {
+                subject.collect {
+                    if (counter1.incrementAndGet() == expected) {
+                        cancel()
+                    }
+                }
+            }
+
+            val job2 = launch(it.asCoroutineDispatcher()) {
+                subject.collect { counter2.incrementAndGet() }
+            }
+
+            while (subject.collectorCount() != 2) {
+                delay(1)
+            }
+
+            for (i in 1..n) {
+                subject.emit(i)
+            }
+
+            subject.complete()
+            job2.join()
+
+            assertEquals(true, job1.isCancelled)
+            assertEquals(true, job2.isCompleted)
+            assertEquals(expected, counter1.get())
+            assertEquals(n, counter2.get())
+            assertEquals(0, subject.collectorCount())
+        }
+
+    }
 }
