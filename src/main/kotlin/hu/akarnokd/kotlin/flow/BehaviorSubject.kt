@@ -81,9 +81,14 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
             current = next
 
             for (collector in collectors.get()) {
-                collector.consumeReady.await()
+                try {
+                    collector.consumeReady.await()
 
-                collector.resume()
+                    collector.resume()
+                } catch (ex: CancellationException) {
+                    remove(collector)
+                }
+
             }
         }
     }
@@ -100,9 +105,13 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
             current = DONE
 
             for (collector in collectors.getAndSet(TERMINATED)) {
-                collector.consumeReady.await()
+                try {
+                    collector.consumeReady.await()
 
-                collector.resume()
+                    collector.resume()
+                } catch (_: CancellationException) {
+                    // ignored
+                }
             }
         }
     }
@@ -118,9 +127,13 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
             current = DONE
 
             for (collector in collectors.getAndSet(TERMINATED)) {
-                collector.consumeReady.await()
+                try {
+                    collector.consumeReady.await()
 
-                collector.resume()
+                    collector.resume()
+                } catch (_: CancellationException) {
+                    // ignored
+                }
             }
         }
     }

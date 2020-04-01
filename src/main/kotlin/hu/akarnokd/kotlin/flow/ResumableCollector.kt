@@ -70,7 +70,7 @@ open class ResumableCollector<T> : Resumable() {
     }
 
     suspend fun drain(collector: FlowCollector<T>, onComplete: ((ResumableCollector<T>) -> Unit)? = null) {
-        while (true) {
+        while (coroutineContext.isActive) {
 
             readyConsumer()
 

@@ -275,7 +275,7 @@ class PublishSubjectTest {
         assertEquals(0, counter1.get())
     }
 
-    @Test
+    @Test(timeout = 1000)
     fun cancelledConsumer() = runBlocking {
         withSingle {
             val subject = PublishSubject<Int>()
@@ -288,7 +288,7 @@ class PublishSubjectTest {
             val job1 = launch(it.asCoroutineDispatcher()) {
                 subject.collect {
                     if (counter1.incrementAndGet() == expected) {
-                        cancel()
+                        throw CancellationException();
                     }
                 }
             }
@@ -316,7 +316,7 @@ class PublishSubjectTest {
 
     }
 
-    @Test
+    @Test(timeout = 1000)
     fun cancelledOneCollectorSecondCompletes() = runBlocking {
         withSingle {
             val subject = PublishSubject<Int>()
@@ -330,7 +330,7 @@ class PublishSubjectTest {
             val job1 = launch(it.asCoroutineDispatcher()) {
                 subject.collect {
                     if (counter1.incrementAndGet() == expected) {
-                        cancel()
+                        throw CancellationException();
                     }
                 }
             }
@@ -357,5 +357,29 @@ class PublishSubjectTest {
             assertEquals(0, subject.collectorCount())
         }
 
+    }
+
+    @Test(timeout = 1000) // wait a second
+    @ExperimentalCoroutinesApi
+    fun take() = runBlocking {
+
+        val subject = PublishSubject<Int>()
+
+        val job = launch(Dispatchers.IO) {
+            subject
+                    .buffer()
+                    .take(1) // cancel after first emission
+                    .collect { println("$it") }
+            println("Done")
+        }
+
+        // wait for the collector to arrive
+        while (!subject.hasCollectors()) {
+            delay(1)
+        }
+
+        subject.emit(1)
+
+        job.join()
     }
 }

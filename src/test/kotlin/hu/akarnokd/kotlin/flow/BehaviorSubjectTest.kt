@@ -364,7 +364,7 @@ class BehaviorSubjectTest {
         }
     }
 
-    @Test
+    @Test(timeout = 1000)
     fun cancelledConsumer() = runBlocking {
         withSingle {
             val subject = BehaviorSubject<Int>()
@@ -377,7 +377,7 @@ class BehaviorSubjectTest {
             val job1 = launch(it.asCoroutineDispatcher()) {
                 subject.collect {
                     if (counter1.incrementAndGet() == expected) {
-                        cancel()
+                        throw CancellationException();
                     }
                 }
             }
@@ -405,7 +405,7 @@ class BehaviorSubjectTest {
 
     }
 
-    @Test
+    @Test(timeout = 1000)
     fun cancelledOneCollectorSecondCompletes() = runBlocking {
         withSingle {
             val subject = BehaviorSubject<Int>()
@@ -419,7 +419,7 @@ class BehaviorSubjectTest {
             val job1 = launch(it.asCoroutineDispatcher()) {
                 subject.collect {
                     if (counter1.incrementAndGet() == expected) {
-                        cancel()
+                        throw CancellationException();
                     }
                 }
             }

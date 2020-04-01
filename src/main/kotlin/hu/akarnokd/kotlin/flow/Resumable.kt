@@ -16,6 +16,7 @@
 
 package hu.akarnokd.kotlin.flow
 
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.IllegalStateException
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.Continuation
@@ -39,7 +40,7 @@ open class Resumable : AtomicReference<Continuation<Any>>() {
      * Only one thread can call this method.
      */
     suspend fun await() {
-        suspendCoroutine<Any> {
+        suspendCancellableCoroutine<Any> {
             while (true) {
                 val current = get()
                 if (current == READY) {

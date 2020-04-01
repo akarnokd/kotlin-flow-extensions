@@ -16,6 +16,7 @@
 
 package hu.akarnokd.kotlin.flow
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.AbstractFlow
 import kotlinx.coroutines.flow.Flow
@@ -56,7 +57,11 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
      */
     override suspend fun emit(value: T) {
         for (collector in collectors.get()) {
-            collector.next(value)
+            try {
+                collector.next(value)
+            } catch (ex: CancellationException) {
+                remove(collector);
+            }
         }
     }
 
@@ -68,7 +73,11 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
             this.error = ex
             @Suppress("UNCHECKED_CAST")
             for (collector in collectors.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
-                collector.error(ex)
+                try {
+                    collector.error(ex)
+                } catch (_: CancellationException) {
+                    // ignored
+                }
             }
         }
     }
@@ -79,7 +88,11 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
     override suspend fun complete() {
         @Suppress("UNCHECKED_CAST")
         for (collector in collectors.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
-            collector.complete()
+            try {
+                collector.complete()
+            } catch (_: CancellationException) {
+                // ignored
+            }
         }
     }
 
