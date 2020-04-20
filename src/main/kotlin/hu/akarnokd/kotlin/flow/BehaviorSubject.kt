@@ -46,6 +46,24 @@ class BehaviorSubject<T> : AbstractFlow<T>, SubjectAPI<T> {
     private var error: Throwable? = null
 
     /**
+     * Returns a single value the Subject currently has
+     * or throw "No value" if no such value exists.
+     *
+     * @throws IllegalStateException
+     */
+    val value: T get() = valueOrNull ?: error("No value")
+
+    /**
+     * Returns a single value the Subject currently has
+     * or null if no such value exists.
+     */
+    val valueOrNull: T?
+        get() {
+            val currentValue = current.value
+            return if (currentValue == NONE) null else currentValue
+        }
+
+    /**
      * Constructs an empty BehaviorSubject.
      */
     @Suppress("UNCHECKED_CAST")

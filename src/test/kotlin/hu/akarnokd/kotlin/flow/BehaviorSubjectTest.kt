@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.collections.ArrayList
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 
 @FlowPreview
 class BehaviorSubjectTest {
@@ -446,5 +447,40 @@ class BehaviorSubjectTest {
             assertEquals(0, subject.collectorCount())
         }
 
+    }
+
+    @Test
+    fun initialValue() = runBlocking {
+        withSingle {
+            val initialValue = 128
+            val subject = BehaviorSubject<Int>(initialValue)
+            assertEquals(initialValue, subject.value)
+        }
+    }
+
+    @Test
+    fun nullInitialValue() = runBlocking {
+        withSingle {
+            val subject = BehaviorSubject<Int>()
+            assertEquals(null, subject.valueOrNull)
+        }
+    }
+
+    @Test
+    fun throwNoValue() = runBlocking {
+        withSingle {
+            val subject = BehaviorSubject<Int>()
+            assertFails("No value") { subject.value }
+        }
+    }
+
+    @Test
+    fun updateValue() = runBlocking {
+        withSingle {
+            val value = 128
+            val subject = BehaviorSubject<Int>()
+            subject.emit(value)
+            assertEquals(value, subject.value)
+        }
     }
 }
