@@ -36,6 +36,7 @@ Table of contents
   - `Flow.takeUntil`
   - `Flow.onBackpressureDrop`
   - [`Flow.flatMapDrop`](#flowflatmapdrop)
+  - `Flow.ambWith`
 - `ParallelFlow` operators (`FlowExtensions`)
   - `ParallelFlow.concatMap`
   - `ParallelFlow.filter`
