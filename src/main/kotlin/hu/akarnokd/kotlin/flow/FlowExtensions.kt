@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 David Karnok
+ * Copyright 2019-2020 David Karnok
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,16 @@ import java.util.concurrent.TimeUnit
  */
 @FlowPreview
 fun <T, R> Flow<T>.publish(transform: suspend (Flow<T>) -> Flow<R>) : Flow<R> =
-    FlowMulticastFunction(this, { PublishSubject() }, transform)
+    FlowMulticastFunction(this, { /* MulticastSubject()*/ PublishSubject() }, transform)
+
+/**
+ * Shares a single collector towards the upstream source and multicasts
+ * values to any number of consumers which then can produce the output
+ * flow of values.
+ */
+@FlowPreview
+fun <T, R> Flow<T>.multicast(subjectProvider: () -> SubjectAPI<T>, transform: suspend (Flow<T>) -> Flow<R>) : Flow<R> =
+        FlowMulticastFunction(this, subjectProvider, transform)
 
 /**
  * Shares a single collector towards the upstream source and multicasts
@@ -170,6 +179,12 @@ fun <T> Flow<T>.onBackpressurureDrop() : Flow<T> = FlowOnBackpressureDrop(this)
  */
 @FlowPreview
 fun <T, R> Flow<T>.flatMapDrop(mapper: suspend (T) -> Flow<R>) : Flow<R> = FlowFlatMapDrop(this, mapper)
+
+/**
+ * Merges multiple sources in an unbounded manner.
+ */
+@FlowPreview
+fun <T> mergeArray(vararg sources: Flow<T>) : Flow<T> = FlowMergeArray(sources)
 
 // -----------------------------------------------------------------------------------------
 // Parallel Extensions
