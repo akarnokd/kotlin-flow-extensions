@@ -11,7 +11,7 @@ Extensions to the Kotlin Flow library.
 
 ```groovy
 dependencies {
-    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.5"
+    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.6"
 }
 ```
 
@@ -30,7 +30,7 @@ Table of contents
   - `Flow.concatWith`
   - `Flow.groupBy`
   - `Flow.parallel`
-  - `Flow.publish`
+  - [`Flow.publish`](#flowpublish)
   - `Flow.replay`
   - `Flow.startCollectOn`
   - `Flow.takeUntil`
@@ -182,3 +182,30 @@ range(1, 10)
 )
 ```
 
+## Flow.publish
+
+Shares a single connection to the upstream source which can be consumed by many collectors inside a `transform` function,
+which then yields the resulting items for the downstream.
+
+Effectively, one collector to the output `Flow<R>` will trigger exactly one collection of the upstream `Flow<T>`. Inside
+the `transformer` function though, the presented `Flow<T>` can be collected as many times as needed; it won't trigger
+new collections towards the upstream but share items to all inner collectors as they become available.
+
+Unfortunately, the suspending nature of coroutines/`Flow` doesn't give a clear indication when the `transformer` chain
+has been properly established, which can result in item loss or run-to-completion without any item being collected.
+If the number of the inner collectors inside `transformer` can be known, the `publish(expectedCollectors)` overload
+can be used to hold back the upstream until the expected number of collectors have started/ready collecting items.
+
+#### Example:
+
+```kotlin
+    range(1, 5)
+    .publish(2) { 
+         shared -> merge(shared.filter { it % 2 == 0 }, shared.filter { it % 2 != 0 }) 
+    }
+    .assertResult(1, 2, 3, 4, 5)
+```
+
+In the example, it is known `merge` will establish 2 collectors, thus the `publish` can be instructed to await those 2.
+Without the argument, `range` would rush through its items as `merge` doesn't start collecting in time, causing an
+empty result list.

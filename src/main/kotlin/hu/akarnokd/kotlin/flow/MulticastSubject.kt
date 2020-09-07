@@ -30,178 +30,137 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A subject implementation that dispatches signals to multiple
- * consumers or buffers them until such consumers arrive.
+ * A subject implementation that awaits a certain number of collectors
+ * to start consuming, then allows the producer side to deliver items
+ * to them.
  *
  * @param <T> the element type of the [Flow]
  * @param bufferSize the number of items to buffer until consumers arrive
  */
 @FlowPreview
-class MulticastSubject<T>(private val bufferSize: Int = 32) : AbstractFlow<T>(), SubjectAPI<T> {
+class MulticastSubject<T>(private val expectedCollectors: Int) : AbstractFlow<T>(), SubjectAPI<T> {
 
-    val queue = ConcurrentLinkedQueue<T>()
+    val collectors = AtomicReference<Array<ResumableCollector<T>>>(EMPTY as Array<ResumableCollector<T>>)
 
-    val availableQueue = AtomicInteger(bufferSize)
+    val producer = Resumable()
 
-    val consumers = AtomicReference(EMPTY as Array<ResumableCollector<T>>)
-
-    val producerAwait = Resumable()
-
-    val wip = AtomicInteger()
+    val remainingCollectors = AtomicInteger(expectedCollectors)
 
     @Volatile
-    var error: Throwable? = null
+    var terminated : Throwable? = null
 
     override suspend fun emit(value: T) {
-        while (availableQueue.get() == 0) {
-            producerAwait.await()
+        awaitCollectors()
+        for (collector in collectors.get()) {
+            try {
+                collector.next(value)
+            } catch (ex: CancellationException) {
+                remove(collector)
+            }
         }
-        queue.offer(value)
-        availableQueue.decrementAndGet();
-        drain()
     }
 
     override suspend fun emitError(ex: Throwable) {
-        error = ex
-        drain()
+        //awaitCollectors()
+        terminated = ex;
+        for (collector in collectors.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
+            try {
+                collector.error(ex)
+            } catch (_: CancellationException) {
+                // ignored at this point
+            }
+        }
     }
 
     override suspend fun complete() {
-        error = DONE
-        drain()
+        //awaitCollectors()
+        terminated = DONE
+        for (collector in collectors.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
+            try {
+                collector.complete()
+            } catch (_: CancellationException) {
+                // ignored at this point
+            }
+        }
     }
 
     override fun hasCollectors(): Boolean {
-        return consumers.get().isNotEmpty();
+        return collectors.get().isNotEmpty()
     }
 
     override fun collectorCount(): Int {
-        return consumers.get().size;
+        return collectors.get().size
+    }
+
+    private suspend fun awaitCollectors() {
+        if (remainingCollectors.get() != 0) {
+            producer.await()
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST", "")
+    private fun add(inner: ResumableCollector<T>) : Boolean {
+        while (true) {
+
+            val a = collectors.get()
+            if (a as Any == TERMINATED as Any) {
+                return false
+            }
+            val n = a.size
+            val b = a.copyOf(n + 1)
+            b[n] = inner
+            if (collectors.compareAndSet(a, b as Array<ResumableCollector<T>>)) {
+                return true
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun remove(inner: ResumableCollector<T>) {
+        while (true) {
+            val a = collectors.get()
+            val n = a.size
+            if (n == 0) {
+                return
+            }
+
+            val j = a.indexOf(inner)
+            if (j < 0) {
+                return
+            }
+
+            var b = EMPTY as Array<ResumableCollector<T>?>
+            if (n != 1) {
+                b = Array(n - 1) { null }
+                System.arraycopy(a, 0, b, 0, j)
+                System.arraycopy(a, j + 1, b, j, n - j - 1)
+            }
+            if (collectors.compareAndSet(a, b as Array<ResumableCollector<T>>)) {
+                return
+            }
+        }
     }
 
     override suspend fun collectSafely(collector: FlowCollector<T>) {
-        val c = ResumableCollector<T>()
-        if (add(c)) {
-            c.readyConsumer()
-            drain()
-            c.drain(collector) { remove(it) }
+        val rc = ResumableCollector<T>()
+        if (add(rc)) {
+            if (remainingCollectors.decrementAndGet() == 0) {
+                producer.resume()
+            }
+            rc.drain(collector) { remove(it) }
         } else {
-            val ex = error
+            val ex = terminated;
             if (ex != null && ex != DONE) {
                 throw ex
             }
         }
     }
 
-    private fun add(collector: ResumableCollector<T>) : Boolean {
-        while (true) {
-            val a = consumers.get()
-            if (a == TERMINATED) {
-                return false
-            }
-            val b = Array<ResumableCollector<T>>(a.size + 1) { idx ->
-                if (idx < a.size) a[idx] else collector
-            }
-            if (consumers.compareAndSet(a, b)) {
-                return true
-            }
-        }
-    }
-    private fun remove(collector: ResumableCollector<T>) {
-        while (true) {
-            val a = consumers.get()
-            val n = a.size
-            if (n == 0) {
-                return
-            }
-            var j = -1
-            for (i in 0 until n) {
-                if (a[i] == collector) {
-                    j = i
-                    break
-                }
-            }
-            if (j < 0) {
-                return;
-            }
-            var b = EMPTY as Array<ResumableCollector<T>?>
-            if (n != 1) {
-                b = Array<ResumableCollector<T>?>(n - 1) { null }
-                System.arraycopy(a, 0, b, 0, j)
-                System.arraycopy(a, j + 1, b, j, n - j - 1)
-            }
-            if (consumers.compareAndSet(a, b as Array<ResumableCollector<T>>)) {
-                return;
-            }
-        }
-    }
-
-    private suspend fun drain() {
-        if (wip.getAndIncrement() != 0) {
-            return;
-        }
-
-        while (true) {
-            val collectors = consumers.get()
-            if (collectors.isNotEmpty()) {
-                val ex = error;
-                val v = queue.poll();
-
-                if (v == null && ex != null) {
-                    finish(ex)
-                }
-                else if (v != null) {
-                    var k = 0;
-                    for (collector in consumers.get()) {
-                        try {
-                            //println("MulticastSubject -> [$k]: $v")
-                            collector.next(v)
-                        } catch (ex: CancellationException) {
-                            remove(collector);
-                        }
-                        k++
-                    }
-                    availableQueue.getAndIncrement()
-                    producerAwait.resume()
-                    continue
-                }
-            } else {
-                val ex = error;
-                if (ex != null && queue.isEmpty()) {
-                    finish(ex)
-                }
-            }
-            if (wip.decrementAndGet() == 0) {
-                break
-            }
-        }
-    }
-
-    private suspend fun finish(ex: Throwable) {
-        if (ex == DONE) {
-            for (collector in consumers.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
-                try {
-                    collector.complete()
-                } catch (_: CancellationException) {
-                    // ignored
-                }
-            }
-        } else {
-            for (collector in consumers.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
-                try {
-                    collector.error(ex)
-                } catch (_: CancellationException) {
-                    // ignored
-                }
-            }
-        }
-    }
-
     companion object {
-        val DONE: Throwable = Throwable("Subject Completed")
+        val EMPTY = arrayOf<ResumableCollector<Any>>()
 
-        val EMPTY = arrayOf<ResumableCollector<Any>>();
+        val TERMINATED = arrayOf<ResumableCollector<Any>>()
 
-        val TERMINATED = arrayOf<ResumableCollector<Any>>();
+        val DONE = Throwable("Subject completed")
     }
 }

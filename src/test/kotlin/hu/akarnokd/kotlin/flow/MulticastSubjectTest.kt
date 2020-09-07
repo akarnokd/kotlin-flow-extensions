@@ -32,7 +32,7 @@ class MulticastSubjectTest {
     @Test
     fun basicCreate() = runBlocking {
         withSingle {
-            val subject = MulticastSubject<Int>()
+            val subject = MulticastSubject<Int>(1)
 
             val result = ArrayList<Int>()
 
@@ -64,7 +64,7 @@ class MulticastSubjectTest {
     fun lotsOfItems() = runBlocking {
 
         withSingle {
-            val subject = MulticastSubject<Int>()
+            val subject = MulticastSubject<Int>(1)
 
             val n = 100_000
 
@@ -99,7 +99,7 @@ class MulticastSubjectTest {
     fun lotsOfItems2() = runBlocking {
 
         withSingle {
-            val subject = MulticastSubject<Int>()
+            val subject = MulticastSubject<Int>(2)
 
             val n = 100_000
 
@@ -144,7 +144,7 @@ class MulticastSubjectTest {
     @Test
     fun error()  = runBlocking {
         withSingle {
-            val subject = MulticastSubject<Int>()
+            val subject = MulticastSubject<Int>(1)
 
             val counter = AtomicInteger()
             val exc = AtomicReference<Throwable>()
@@ -175,7 +175,7 @@ class MulticastSubjectTest {
     @Test
     fun multiConsumer() = runBlocking {
         withSingle {
-            val subject = MulticastSubject<Int>()
+            val subject = MulticastSubject<Int>(2)
 
             val n = 10_000
 
@@ -214,7 +214,7 @@ class MulticastSubjectTest {
     @Test
     fun multiConsumerWithDelay() = runBlocking {
         withSingle {
-            val subject = MulticastSubject<Int>()
+            val subject = MulticastSubject<Int>(2)
 
             val n = 10
 
@@ -255,7 +255,7 @@ class MulticastSubjectTest {
     @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun multiConsumerTake() = runBlocking {
         withSingle {
-            val subject = MulticastSubject<Int>()
+            val subject = MulticastSubject<Int>(2)
 
             val n = 10
 
@@ -294,7 +294,7 @@ class MulticastSubjectTest {
 
     @Test
     fun alreadyCompleted()  = runBlocking {
-        val subject = MulticastSubject<Int>()
+        val subject = MulticastSubject<Int>(1)
         subject.complete()
 
         val counter1 = AtomicInteger()
@@ -308,7 +308,7 @@ class MulticastSubjectTest {
 
     @Test
     fun alreadyErrored()  = runBlocking {
-        val subject = MulticastSubject<Int>()
+        val subject = MulticastSubject<Int>(1)
         subject.emitError(IOException())
 
         val counter1 = AtomicInteger()
@@ -328,7 +328,7 @@ class MulticastSubjectTest {
     @Test(timeout = 1000)
     fun cancelledConsumer() = runBlocking {
         withSingle {
-            val subject = MulticastSubject<Int>()
+            val subject = MulticastSubject<Int>(1)
 
             val expected = 3
             val n = 10
@@ -369,7 +369,7 @@ class MulticastSubjectTest {
     @Test(timeout = 1000)
     fun cancelledOneCollectorSecondCompletes() = runBlocking {
         withSingle {
-            val subject = MulticastSubject<Int>()
+            val subject = MulticastSubject<Int>(2)
 
             val expected = 3
             val n = 10
@@ -413,7 +413,7 @@ class MulticastSubjectTest {
     @ExperimentalCoroutinesApi
     fun take() = runBlocking {
 
-        val subject = MulticastSubject<Int>()
+        val subject = MulticastSubject<Int>(1)
 
         val job = launch(Dispatchers.IO) {
             subject
@@ -438,7 +438,7 @@ class MulticastSubjectTest {
     @ExperimentalCoroutinesApi
     fun take2() = runBlocking {
 
-        val subject = MulticastSubject<Int>()
+        val subject = MulticastSubject<Int>(2)
 
         val job1 = launch(Dispatchers.IO) {
             subject
@@ -457,7 +457,7 @@ class MulticastSubjectTest {
         }
 
         // wait for the collector to arrive
-        while (!subject.hasCollectors()) {
+        while (subject.collectorCount() != 2) {
             delay(1)
         }
 

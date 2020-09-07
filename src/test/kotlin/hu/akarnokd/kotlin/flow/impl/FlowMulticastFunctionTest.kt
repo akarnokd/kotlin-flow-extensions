@@ -51,6 +51,7 @@ class FlowMulticastFunctionTest {
                 .assertResult(1, 2, 3, 4, 5)
     }
 
+
     @Test(timeout = 5000)
     @Ignore("Doesn't work either")
     fun publishMultipleConsumersCustomMerge() = runBlocking {
@@ -64,14 +65,13 @@ class FlowMulticastFunctionTest {
     }
 
     @Test(timeout = 5000)
-    @Ignore("Doesn't work either")
     fun multicastMultipleConsumersCustomMerge() = runBlocking {
         arrayOf(1, 2, 3, 4, 5)
                 .asFlow()
-                .multicast({ MulticastSubject() }, {
+                .publish(2) {
                     shared ->
                     mergeArray(shared.filter { it % 2 == 1 }, shared.filter { it % 2 == 0 })
-                })
+                }
                 .assertResult(1, 2, 3, 4, 5)
     }
 
