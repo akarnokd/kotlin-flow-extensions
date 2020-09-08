@@ -466,4 +466,28 @@ class MulticastSubjectTest {
         job1.join()
         job2.join()
     }
+
+    @Test(timeout = 5000)
+    @ExperimentalCoroutinesApi
+    fun moreThanExpectedCollectors() = runBlocking {
+        val subject = MulticastSubject<Int>(2)
+        val result = mutableListOf<Int>()
+
+        val job = launch(Dispatchers.IO) {
+            merge(subject, subject, subject)
+            .collect { result.add(it) }
+        }
+
+        // wait for the collector to arrive
+        while (subject.collectorCount() != 3) {
+            delay(1)
+        }
+
+        subject.emit(1)
+        subject.complete()
+
+        job.join()
+
+        assertEquals(listOf(1, 1, 1), result)
+    }
 }

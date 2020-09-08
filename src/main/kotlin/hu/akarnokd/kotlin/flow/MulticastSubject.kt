@@ -144,8 +144,17 @@ class MulticastSubject<T>(private val expectedCollectors: Int) : AbstractFlow<T>
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         val rc = ResumableCollector<T>()
         if (add(rc)) {
-            if (remainingCollectors.decrementAndGet() == 0) {
-                producer.resume()
+            while (true) {
+                val a = remainingCollectors.get()
+                if (a == 0) {
+                    break;
+                }
+                if (remainingCollectors.compareAndSet(a, a - 1)) {
+                    if (a == 1) {
+                        producer.resume();
+                    }
+                    break;
+                }
             }
             rc.drain(collector) { remove(it) }
         } else {
