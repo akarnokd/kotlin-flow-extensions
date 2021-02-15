@@ -12,7 +12,7 @@ buildscript {
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "biz.aQute.bnd:biz.aQute.bnd.gradle:5.2.0"
-        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.8.0'
+        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.14.2'
         classpath "gradle.plugin.com.hierynomus.gradle.plugins:license-gradle-plugin:0.15.0"
     }
 }
