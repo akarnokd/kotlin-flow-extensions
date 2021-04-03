@@ -23,6 +23,8 @@ Table of contents
   - [PublishSubject](#publishsubject)
   - [ReplaySubject](#replaysubject)
   - [BehaviorSubject](#behaviorsubject)
+  - [UnicastSubject](#unicastsubject)
+  - [UnicastWorkSubject](#unicastworksubject)
 - Sources
   - `range`
   - `timer`
@@ -209,3 +211,52 @@ can be used to hold back the upstream until the expected number of collectors ha
 In the example, it is known `merge` will establish 2 collectors, thus the `publish` can be instructed to await those 2.
 Without the argument, `range` would rush through its items as `merge` doesn't start collecting in time, causing an
 empty result list.
+
+## UnicastSubject
+
+Buffers items until a single collector starts collecting items. Use `collectorCancelled` to
+detect when the collector no longer wants to collect items.
+
+Note that the subject uses an unbounded inner buffer and does not suspend its input side if
+the collector never arrives or can't keep up.
+
+```kotlin
+val us = UnicastSubject()
+
+launchIn(Dispatchers.IO) {
+    for (i in 1..200) {
+        println("Emitting $i")
+        us.emit(i)
+        delay(1)
+    }
+    emit.complete()
+}
+
+// collector arrives late for some reason
+delay(100)
+
+us.collect { println("Collecting $it") }
+```
+
+## UnicastWorkSubject
+
+Buffers items until and inbetween a single collector is able to collect items. If the current
+collector cancels, the next collector will receive the subsequent items.
+
+Note that the subject uses an unbounded inner buffer and does not suspend its input side if
+the collector never arrives or can't keep up.
+
+```kotlin
+val uws = UnicastWorkSubject()
+
+generateInts(uws, 1, 15)
+
+// prints lines 1..5
+uws.take(5).collect { println(it) }
+
+// prints lines 6..10
+uws.take(5).collect { println(it) }
+
+// prints lines 11..15
+uws.take(5).collect { println(it) }
+```
