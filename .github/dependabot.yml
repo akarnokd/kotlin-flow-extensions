@@ -1,0 +1,31 @@
+version: 2
+updates:
+- package-ecosystem: gradle
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "04:00"
+  open-pull-requests-limit: 20
+  ignore:
+  - dependency-name: org.jetbrains.kotlin:kotlin-test-junit
+    versions:
+    - 1.4.21-2
+    - 1.5.0
+  - dependency-name: org.jetbrains.kotlin:kotlin-stdlib
+    versions:
+    - 1.4.21-2
+    - 1.5.0
+  - dependency-name: org.jetbrains.kotlin:kotlin-gradle-plugin
+    versions:
+    - 1.4.21-2
+    - 1.5.0
+  - dependency-name: com.vanniktech:gradle-maven-publish-plugin
+    versions:
+    - 0.14.0
+    - 0.14.1
+    - 0.14.2
+    - 0.15.0
+  - dependency-name: org.jetbrains.kotlinx:kotlinx-coroutines-core
+    versions:
+    - 1.4.2-native-mt
+    - 1.4.3-native-mt
