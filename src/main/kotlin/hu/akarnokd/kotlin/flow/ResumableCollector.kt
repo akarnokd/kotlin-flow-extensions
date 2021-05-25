@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 David Karnok
+ * Copyright 2019-2020 David Karnok
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ open class ResumableCollector<T> : Resumable() {
         await()
     }
 
-    private fun readyConsumer() {
+    fun readyConsumer() {
         consumerReady.resume()
     }
 

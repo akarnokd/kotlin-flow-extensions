@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 David Karnok
+ * Copyright 2019-2020 David Karnok
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,44 @@ import java.util.concurrent.TimeUnit
  * Shares a single collector towards the upstream source and multicasts
  * values to any number of consumers which then can produce the output
  * flow of values.
+ *
+ * Note that due to how coroutines/[Flow] are implemented, it is not guaranteed
+ * the [transform] function connects the upstream with the downstream in time,
+ * causing item loss or even run-to-completion without any single upstream item
+ * being collected and transformed. To avoid such scenarios, use the
+ * `publish(expectedCollectors)` overload.
  */
 @FlowPreview
 fun <T, R> Flow<T>.publish(transform: suspend (Flow<T>) -> Flow<R>) : Flow<R> =
     FlowMulticastFunction(this, { PublishSubject() }, transform)
+
+/**
+ * Shares a single collector towards the upstream source and multicasts
+ * values to any number of consumers which then can produce the output
+ * flow of values.
+ *
+ * Note that due to how coroutines/[Flow] are implemented, it is not guaranteed
+ * the [transform] function connects the upstream with the downstream in time,
+ * causing item loss or even run-to-completion without any single upstream item
+ * being collected and transformed. To avoid such scenarios, specify the
+ * [expectedCollectors] to delay the collection of the upstream until the number
+ * of inner collectors has reached the specified number.
+ *
+ * @param expectedCollectors the number of collectors to wait for before resuming the source, allowing
+ * the desired number of collectors to arrive and be ready for the upstream items
+ */
+@FlowPreview
+fun <T, R> Flow<T>.publish(expectedCollectors: Int, transform: suspend (Flow<T>) -> Flow<R>) : Flow<R> =
+        FlowMulticastFunction(this, { /* MulticastSubject()*/ MulticastSubject(expectedCollectors) }, transform)
+
+/**
+ * Shares a single collector towards the upstream source and multicasts
+ * values to any number of consumers which then can produce the output
+ * flow of values.
+ */
+@FlowPreview
+fun <T, R> Flow<T>.multicast(subjectProvider: () -> SubjectAPI<T>, transform: suspend (Flow<T>) -> Flow<R>) : Flow<R> =
+        FlowMulticastFunction(this, subjectProvider, transform)
 
 /**
  * Shares a single collector towards the upstream source and multicasts
@@ -170,6 +204,12 @@ fun <T> Flow<T>.onBackpressurureDrop() : Flow<T> = FlowOnBackpressureDrop(this)
  */
 @FlowPreview
 fun <T, R> Flow<T>.flatMapDrop(mapper: suspend (T) -> Flow<R>) : Flow<R> = FlowFlatMapDrop(this, mapper)
+
+/**
+ * Merges multiple sources in an unbounded manner.
+ */
+@FlowPreview
+fun <T> mergeArray(vararg sources: Flow<T>) : Flow<T> = FlowMergeArray(sources)
 
 // -----------------------------------------------------------------------------------------
 // Parallel Extensions

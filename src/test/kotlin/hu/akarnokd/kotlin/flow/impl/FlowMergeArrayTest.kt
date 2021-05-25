@@ -16,42 +16,57 @@
 
 package hu.akarnokd.kotlin.flow.impl
 
-import hu.akarnokd.kotlin.flow.assertResult
-import hu.akarnokd.kotlin.flow.range
-import hu.akarnokd.kotlin.flow.takeUntil
-import hu.akarnokd.kotlin.flow.timer
+import hu.akarnokd.kotlin.flow.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertEquals
 
 @FlowPreview
-class FlowTakeUntilTest {
+class FlowMergeArrayTest {
     @Test
     fun basic() = runBlocking {
 
-        range(1, 10)
-                .map {
-                    delay(100)
-                    it
-                }
-                .takeUntil(timer(550, TimeUnit.MILLISECONDS))
-                .assertResult(1, 2, 3, 4, 5)
+        mergeArray(range(1, 5), range(6, 5))
+                .assertResultSet(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
     }
 
     @Test
-    fun untilTakesLonger() = runBlocking {
+    fun oneSource() = runBlocking {
 
-        range(1, 10)
-                .map {
-                    delay(50)
-                    it
-                }
-                .takeUntil(timer(1000, TimeUnit.MILLISECONDS))
-                .assertResult(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        mergeArray(range(1, 5))
+                .assertResultSet(1, 2, 3, 4, 5)
 
     }
+
+    @Test
+    fun noSources() = runBlocking {
+
+        mergeArray<Int>()
+                .assertResultSet()
+
+    }
+
+    @Test
+    fun manyAsync() = runBlocking {
+
+        val n = 100_000
+
+        val m = mergeArray(
+                    range(0, n / 2).startCollectOn(Dispatchers.IO),
+                    range(0, n / 2).startCollectOn(Dispatchers.IO)
+        )
+                .count()
+
+        assertEquals(n, m)
+
+    }
+
 }

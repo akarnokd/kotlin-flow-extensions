@@ -27,12 +27,12 @@ import kotlin.collections.ArrayList
 import kotlin.test.assertEquals
 
 @FlowPreview
-class PublishSubjectTest {
+class MulticastSubjectTest {
 
     @Test
     fun basicCreate() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>()
+            val subject = MulticastSubject<Int>(1)
 
             val result = ArrayList<Int>()
 
@@ -64,7 +64,7 @@ class PublishSubjectTest {
     fun lotsOfItems() = runBlocking {
 
         withSingle {
-            val subject = PublishSubject<Int>()
+            val subject = MulticastSubject<Int>(1)
 
             val n = 100_000
 
@@ -72,8 +72,10 @@ class PublishSubjectTest {
 
             val job = launch(it.asCoroutineDispatcher()) {
                 subject.collect {
+                  //  println("Recving $it")
                     counter.lazySet(counter.get() + 1)
                 }
+                //println("Recving DONE")
             }
 
             while (!subject.hasCollectors()) {
@@ -81,9 +83,11 @@ class PublishSubjectTest {
             }
 
             for (i in 1..n) {
+              //  println("Sending $i")
                 subject.emit(i)
             }
             subject.complete()
+            //println("Sending DONE")
 
             job.join()
 
@@ -92,9 +96,55 @@ class PublishSubjectTest {
     }
 
     @Test
+    fun lotsOfItems2() = runBlocking {
+
+        withSingle {
+            val subject = MulticastSubject<Int>(2)
+
+            val n = 100_000
+
+            val counter1 = AtomicInteger()
+            val counter2 = AtomicInteger()
+
+            val job1 = launch(it.asCoroutineDispatcher()) {
+                subject.collect {
+                    //  println("Recving $it")
+                    counter1.lazySet(counter1.get() + 1)
+                }
+                //println("Recving DONE")
+            }
+
+            val job2 = launch(Dispatchers.IO) {
+                subject.collect {
+                    //  println("Recving $it")
+                    counter2.lazySet(counter2.get() + 1)
+                }
+                //println("Recving DONE")
+            }
+
+            while (subject.collectorCount() != 2) {
+                delay(1)
+            }
+
+            for (i in 1..n) {
+                //  println("Sending $i")
+                subject.emit(i)
+            }
+            subject.complete()
+            //println("Sending DONE")
+
+            job1.join()
+            job2.join()
+
+            assertEquals(n, counter1.get())
+            assertEquals(n, counter2.get())
+        }
+    }
+
+    @Test
     fun error()  = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>()
+            val subject = MulticastSubject<Int>(1)
 
             val counter = AtomicInteger()
             val exc = AtomicReference<Throwable>()
@@ -125,7 +175,7 @@ class PublishSubjectTest {
     @Test
     fun multiConsumer() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>()
+            val subject = MulticastSubject<Int>(2)
 
             val n = 10_000
 
@@ -164,7 +214,7 @@ class PublishSubjectTest {
     @Test
     fun multiConsumerWithDelay() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>()
+            val subject = MulticastSubject<Int>(2)
 
             val n = 10
 
@@ -205,7 +255,7 @@ class PublishSubjectTest {
     @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun multiConsumerTake() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>()
+            val subject = MulticastSubject<Int>(2)
 
             val n = 10
 
@@ -244,7 +294,7 @@ class PublishSubjectTest {
 
     @Test
     fun alreadyCompleted()  = runBlocking {
-        val subject = PublishSubject<Int>()
+        val subject = MulticastSubject<Int>(1)
         subject.complete()
 
         val counter1 = AtomicInteger()
@@ -258,7 +308,7 @@ class PublishSubjectTest {
 
     @Test
     fun alreadyErrored()  = runBlocking {
-        val subject = PublishSubject<Int>()
+        val subject = MulticastSubject<Int>(1)
         subject.emitError(IOException())
 
         val counter1 = AtomicInteger()
@@ -278,7 +328,7 @@ class PublishSubjectTest {
     @Test(timeout = 1000)
     fun cancelledConsumer() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>()
+            val subject = MulticastSubject<Int>(1)
 
             val expected = 3
             val n = 10
@@ -319,7 +369,7 @@ class PublishSubjectTest {
     @Test(timeout = 1000)
     fun cancelledOneCollectorSecondCompletes() = runBlocking {
         withSingle {
-            val subject = PublishSubject<Int>()
+            val subject = MulticastSubject<Int>(2)
 
             val expected = 3
             val n = 10
@@ -363,7 +413,7 @@ class PublishSubjectTest {
     @ExperimentalCoroutinesApi
     fun take() = runBlocking {
 
-        val subject = PublishSubject<Int>()
+        val subject = MulticastSubject<Int>(1)
 
         val job = launch(Dispatchers.IO) {
             subject
@@ -381,5 +431,63 @@ class PublishSubjectTest {
         subject.emit(1)
 
         job.join()
+    }
+
+
+    @Test(timeout = 1000) // wait a second
+    @ExperimentalCoroutinesApi
+    fun take2() = runBlocking {
+
+        val subject = MulticastSubject<Int>(2)
+
+        val job1 = launch(Dispatchers.IO) {
+            subject
+                    .buffer()
+                    .take(1) // cancel after first emission
+                    .collect { println("$it") }
+            println("Done")
+        }
+
+        val job2 = launch(Dispatchers.IO) {
+            subject
+                    .buffer()
+                    .take(1) // cancel after first emission
+                    .collect { println("$it") }
+            println("Done")
+        }
+
+        // wait for the collector to arrive
+        while (subject.collectorCount() != 2) {
+            delay(1)
+        }
+
+        subject.emit(1)
+
+        job1.join()
+        job2.join()
+    }
+
+    @Test(timeout = 5000)
+    @ExperimentalCoroutinesApi
+    fun moreThanExpectedCollectors() = runBlocking {
+        val subject = MulticastSubject<Int>(2)
+        val result = mutableListOf<Int>()
+
+        val job = launch(Dispatchers.IO) {
+            merge(subject, subject, subject)
+            .collect { result.add(it) }
+        }
+
+        // wait for the collector to arrive
+        while (subject.collectorCount() != 3) {
+            delay(1)
+        }
+
+        subject.emit(1)
+        subject.complete()
+
+        job.join()
+
+        assertEquals(listOf(1, 1, 1), result)
     }
 }

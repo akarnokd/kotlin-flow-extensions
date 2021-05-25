@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 David Karnok
+ * Copyright 2019-2020 David Karnok
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 
 package hu.akarnokd.kotlin.flow.impl
 
-import hu.akarnokd.kotlin.flow.assertResult
-import hu.akarnokd.kotlin.flow.concatWith
-import hu.akarnokd.kotlin.flow.publish
-import hu.akarnokd.kotlin.flow.replay
+import hu.akarnokd.kotlin.flow.*
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.runBlocking
+import org.junit.Ignore
 import org.junit.Test
 import java.util.concurrent.TimeUnit
 
@@ -39,6 +37,54 @@ class FlowMulticastFunctionTest {
                         shared.filter { it % 2 == 0}
                 }
                 .assertResult(2, 4)
+    }
+
+    @Test(timeout = 5000)
+    @Ignore("Doesn't work")
+    fun publishMultipleConsumers() = runBlocking {
+        arrayOf(1, 2, 3, 4, 5)
+                .asFlow()
+                .publish {
+                    shared ->
+                    merge(shared.filter { it % 2 == 1 }, shared.filter { it % 2 == 0 })
+                }
+                .assertResult(1, 2, 3, 4, 5)
+    }
+
+
+    @Test(timeout = 5000)
+    @Ignore("Doesn't work either")
+    fun publishMultipleConsumersCustomMerge() = runBlocking {
+        arrayOf(1, 2, 3, 4, 5)
+                .asFlow()
+                .publish {
+                    shared ->
+                    mergeArray(shared.filter { it % 2 == 1 }, shared.filter { it % 2 == 0 })
+                }
+                .assertResult(1, 2, 3, 4, 5)
+    }
+
+    @Test(timeout = 5000)
+    fun multicastMultipleConsumersCustomMerge() = runBlocking {
+        arrayOf(1, 2, 3, 4, 5)
+                .asFlow()
+                .publish(2) {
+                    shared ->
+                    mergeArray(shared.filter { it % 2 == 1 }, shared.filter { it % 2 == 0 })
+                }
+                .assertResult(1, 2, 3, 4, 5)
+    }
+
+    @Test(timeout = 5000)
+    @Ignore("Doesn't work")
+    fun replayMultipleConsumers() = runBlocking {
+        arrayOf(1, 2, 3, 4, 5)
+                .asFlow()
+                .replay {
+                    shared ->
+                    merge(shared.filter { it % 2 == 1 }, shared.filter { it % 2 == 0 })
+                }
+                .assertResult(1, 2, 3, 4, 5)
     }
 
     @Test

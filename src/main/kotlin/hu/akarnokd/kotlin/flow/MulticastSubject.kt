@@ -16,83 +16,85 @@
 
 package hu.akarnokd.kotlin.flow
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.AbstractFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.launch
+import java.util.concurrent.CancellationException
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Multicasts items to any number of collectors when they are ready to receive.
+ * A subject implementation that awaits a certain number of collectors
+ * to start consuming, then allows the producer side to deliver items
+ * to them.
  *
  * @param <T> the element type of the [Flow]
+ * @param bufferSize the number of items to buffer until consumers arrive
  */
 @FlowPreview
-class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
+class MulticastSubject<T>(private val expectedCollectors: Int) : AbstractFlow<T>(), SubjectAPI<T> {
 
-    private companion object {
-        private val EMPTY = arrayOf<ResumableCollector<Any>>()
-        private val TERMINATED = arrayOf<ResumableCollector<Any>>()
-    }
+    val collectors = AtomicReference<Array<ResumableCollector<T>>>(EMPTY as Array<ResumableCollector<T>>)
 
-    @Suppress("UNCHECKED_CAST")
-    private val collectors = AtomicReference(EMPTY as Array<ResumableCollector<T>>)
+    val producer = Resumable()
 
-    private var error : Throwable? = null
+    val remainingCollectors = AtomicInteger(expectedCollectors)
 
-    /**
-     * Returns true if this PublishSubject has any collectors.
-     */
-    override fun hasCollectors() : Boolean = collectors.get().isNotEmpty()
+    @Volatile
+    var terminated : Throwable? = null
 
-    /**
-     * Returns the current number of collectors.
-     */
-    override fun collectorCount() : Int = collectors.get().size
-
-    /**
-     * Emit the value to all current collectors, waiting for each of them
-     * to be ready for consuming it.
-     */
     override suspend fun emit(value: T) {
+        awaitCollectors()
         for (collector in collectors.get()) {
             try {
                 collector.next(value)
             } catch (ex: CancellationException) {
-                remove(collector);
+                remove(collector)
             }
         }
     }
 
-    /**
-     * Throw an error on the consumer side.
-     */
     override suspend fun emitError(ex: Throwable) {
-        if (this.error == null) {
-            this.error = ex
-            @Suppress("UNCHECKED_CAST")
-            for (collector in collectors.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
-                try {
-                    collector.error(ex)
-                } catch (_: CancellationException) {
-                    // ignored
-                }
+        //awaitCollectors()
+        terminated = ex;
+        for (collector in collectors.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
+            try {
+                collector.error(ex)
+            } catch (_: CancellationException) {
+                // ignored at this point
             }
         }
     }
 
-    /**
-     * Indicate no further items will be emitted
-     */
     override suspend fun complete() {
-        @Suppress("UNCHECKED_CAST")
+        //awaitCollectors()
+        terminated = DONE
         for (collector in collectors.getAndSet(TERMINATED as Array<ResumableCollector<T>>)) {
             try {
                 collector.complete()
             } catch (_: CancellationException) {
-                // ignored
+                // ignored at this point
             }
+        }
+    }
+
+    override fun hasCollectors(): Boolean {
+        return collectors.get().isNotEmpty()
+    }
+
+    override fun collectorCount(): Int {
+        return collectors.get().size
+    }
+
+    private suspend fun awaitCollectors() {
+        if (remainingCollectors.get() != 0) {
+            producer.await()
         }
     }
 
@@ -139,21 +141,35 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
         }
     }
 
-    /**
-     * Start collecting signals from this PublishSubject.
-     */
-    @FlowPreview
     override suspend fun collectSafely(collector: FlowCollector<T>) {
-        val inner = ResumableCollector<T>()
-        if (add(inner)) {
-            inner.drain(collector) { remove(it) }
-            return
-        }
-
-        val ex = error
-        if (ex != null) {
-            throw ex
+        val rc = ResumableCollector<T>()
+        if (add(rc)) {
+            while (true) {
+                val a = remainingCollectors.get()
+                if (a == 0) {
+                    break;
+                }
+                if (remainingCollectors.compareAndSet(a, a - 1)) {
+                    if (a == 1) {
+                        producer.resume();
+                    }
+                    break;
+                }
+            }
+            rc.drain(collector) { remove(it) }
+        } else {
+            val ex = terminated;
+            if (ex != null && ex != DONE) {
+                throw ex
+            }
         }
     }
 
+    companion object {
+        val EMPTY = arrayOf<ResumableCollector<Any>>()
+
+        val TERMINATED = arrayOf<ResumableCollector<Any>>()
+
+        val DONE = Throwable("Subject completed")
+    }
 }

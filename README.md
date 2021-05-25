@@ -1,7 +1,7 @@
 # kotlin-flow-extensions
 Extensions to the Kotlin Flow library.
 
-<a href='https://travis-ci.org/akarnokd/kotlin-flow-extensions/builds'><img src='https://travis-ci.org/akarnokd/kotlin-flow-extensions.svg?branch=master'></a>
+<a href='https://github.com/akarnokd/kotlin-flow-extensions/actions?query=workflow%3A%22Java+CI+with+Gradle%22'><img src='https://github.com/akarnokd/kotlin-flow-extensions/workflows/Java%20CI%20with%20Gradle/badge.svg'></a>
 [![codecov.io](http://codecov.io/github/akarnokd/kotlin-flow-extensions/coverage.svg?branch=master)](http://codecov.io/github/akarnokd/kotlin-flow-extensions?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.akarnokd/kotlin-flow-extensions/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.akarnokd/kotlin-flow-extensions)
 
@@ -11,7 +11,7 @@ Extensions to the Kotlin Flow library.
 
 ```groovy
 dependencies {
-    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.5"
+    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.8"
 }
 ```
 
@@ -23,6 +23,8 @@ Table of contents
   - [PublishSubject](#publishsubject)
   - [ReplaySubject](#replaysubject)
   - [BehaviorSubject](#behaviorsubject)
+  - [UnicastSubject](#unicastsubject)
+  - [UnicastWorkSubject](#unicastworksubject)
 - Sources
   - `range`
   - `timer`
@@ -30,7 +32,7 @@ Table of contents
   - `Flow.concatWith`
   - `Flow.groupBy`
   - `Flow.parallel`
-  - `Flow.publish`
+  - [`Flow.publish`](#flowpublish)
   - `Flow.replay`
   - `Flow.startCollectOn`
   - `Flow.takeUntil`
@@ -182,3 +184,79 @@ range(1, 10)
 )
 ```
 
+## Flow.publish
+
+Shares a single connection to the upstream source which can be consumed by many collectors inside a `transform` function,
+which then yields the resulting items for the downstream.
+
+Effectively, one collector to the output `Flow<R>` will trigger exactly one collection of the upstream `Flow<T>`. Inside
+the `transformer` function though, the presented `Flow<T>` can be collected as many times as needed; it won't trigger
+new collections towards the upstream but share items to all inner collectors as they become available.
+
+Unfortunately, the suspending nature of coroutines/`Flow` doesn't give a clear indication when the `transformer` chain
+has been properly established, which can result in item loss or run-to-completion without any item being collected.
+If the number of the inner collectors inside `transformer` can be known, the `publish(expectedCollectors)` overload
+can be used to hold back the upstream until the expected number of collectors have started/ready collecting items.
+
+#### Example:
+
+```kotlin
+    range(1, 5)
+    .publish(2) { 
+         shared -> merge(shared.filter { it % 2 == 0 }, shared.filter { it % 2 != 0 }) 
+    }
+    .assertResult(1, 2, 3, 4, 5)
+```
+
+In the example, it is known `merge` will establish 2 collectors, thus the `publish` can be instructed to await those 2.
+Without the argument, `range` would rush through its items as `merge` doesn't start collecting in time, causing an
+empty result list.
+
+## UnicastSubject
+
+Buffers items until a single collector starts collecting items. Use `collectorCancelled` to
+detect when the collector no longer wants to collect items.
+
+Note that the subject uses an unbounded inner buffer and does not suspend its input side if
+the collector never arrives or can't keep up.
+
+```kotlin
+val us = UnicastSubject()
+
+launchIn(Dispatchers.IO) {
+    for (i in 1..200) {
+        println("Emitting $i")
+        us.emit(i)
+        delay(1)
+    }
+    emit.complete()
+}
+
+// collector arrives late for some reason
+delay(100)
+
+us.collect { println("Collecting $it") }
+```
+
+## UnicastWorkSubject
+
+Buffers items until and inbetween a single collector is able to collect items. If the current
+collector cancels, the next collector will receive the subsequent items.
+
+Note that the subject uses an unbounded inner buffer and does not suspend its input side if
+the collector never arrives or can't keep up.
+
+```kotlin
+val uws = UnicastWorkSubject()
+
+generateInts(uws, 1, 15)
+
+// prints lines 1..5
+uws.take(5).collect { println(it) }
+
+// prints lines 6..10
+uws.take(5).collect { println(it) }
+
+// prints lines 11..15
+uws.take(5).collect { println(it) }
+```
