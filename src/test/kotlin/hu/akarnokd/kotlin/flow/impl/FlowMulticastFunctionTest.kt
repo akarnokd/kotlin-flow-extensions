@@ -151,6 +151,7 @@ class FlowMulticastFunctionTest {
     }
 
     @Test
+    @Ignore
     fun `publish multiple consumers`() = runBlocking {
         arrayOf(1, 2, 3, 4, 5)
                 .asFlow()
