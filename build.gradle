@@ -1,7 +1,11 @@
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.4.32'
+    ext.kotlin_version = '1.5.10'
+    ext.dokka_version = '1.4.32'
+    ext.bnd_version = '5.3.0'
+    ext.license_version = '0.15.0'
+    ext.vanniktech_version = '0.15.1'
 
     repositories {
         mavenCentral()
@@ -11,13 +15,15 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "biz.aQute.bnd:biz.aQute.bnd.gradle:5.3.0"
-        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.8.0'
-        classpath "gradle.plugin.com.hierynomus.gradle.plugins:license-gradle-plugin:0.15.0"
+        classpath "biz.aQute.bnd:biz.aQute.bnd.gradle:$bnd_version"
+        classpath "com.vanniktech:gradle-maven-publish-plugin:$vanniktech_version"
+        classpath "gradle.plugin.com.hierynomus.gradle.plugins:license-gradle-plugin:$license_version"
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
     }
 }
 
 apply plugin: 'kotlin'
+apply plugin: 'org.jetbrains.dokka'
 apply plugin: 'jacoco'
 
 group = "com.github.akarnokd"
