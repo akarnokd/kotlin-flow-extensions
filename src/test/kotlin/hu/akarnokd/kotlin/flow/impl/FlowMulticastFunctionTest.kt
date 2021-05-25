@@ -23,6 +23,7 @@ import hu.akarnokd.kotlin.flow.replay
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.util.concurrent.TimeUnit
@@ -101,5 +102,16 @@ class FlowMulticastFunctionTest {
 
                 }
                 .assertResult(2, 4, 4, 5)
+    }
+
+    @Test
+    fun `publish multiple consumers`() = runBlocking {
+        arrayOf(1, 2, 3, 4, 5)
+                .asFlow()
+                .publish {
+                    shared ->
+                    merge(shared.filter { it % 2 == 1}, shared.filter { it % 2 == 0})
+                }
+                .assertResult(1, 2, 3, 4, 5)
     }
 }
