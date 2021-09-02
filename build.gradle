@@ -1,11 +1,11 @@
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.5.10'
-    ext.dokka_version = '1.4.32'
+    ext.kotlin_version = '1.5.30'
+    ext.dokka_version = '1.5.0'
     ext.bnd_version = '5.3.0'
     ext.license_version = '0.15.0'
-    ext.vanniktech_version = '0.15.1'
+    ext.vanniktech_version = '0.17.0'
 
     repositories {
         mavenCentral()
@@ -35,7 +35,7 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1'
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 }

@@ -196,7 +196,7 @@ fun <T> Flow<T>.toList() : Flow<List<T>> {
  * Drops items from the upstream when the downstream is not ready to receive them.
  */
 @FlowPreview
-fun <T> Flow<T>.onBackpressurureDrop() : Flow<T> = FlowOnBackpressureDrop(this)
+fun <T> Flow<T>.onBackpressureDrop() : Flow<T> = FlowOnBackpressureDrop(this)
 
 /**
  * Maps items from the upstream to [Flow] and relays its items while dropping upstream items
@@ -211,12 +211,21 @@ fun <T, R> Flow<T>.flatMapDrop(mapper: suspend (T) -> Flow<R>) : Flow<R> = FlowF
 @FlowPreview
 fun <T> mergeArray(vararg sources: Flow<T>) : Flow<T> = FlowMergeArray(sources)
 
+/**
+ * Launches all [sources] at once and emits all items from a source before items of the next are emitted.
+ * Note that each source is consumed in an unbounded manner and thus, depending on the speed of
+ * the current source and the collector, the operator may retain items longer and may use more memory
+ * during its execution.
+ */
+@FlowPreview
+fun <T> concatArrayEager(vararg sources: Flow<T>) : Flow<T> = FlowConcatArrayEager(sources)
+
 // -----------------------------------------------------------------------------------------
 // Parallel Extensions
 // -----------------------------------------------------------------------------------------
 
 /**
- * Consumes the upstream and dispatches individual items to a parrallel rail
+ * Consumes the upstream and dispatches individual items to a parallel rail
  * of the parallel flow for further consumption.
  */
 fun <T> Flow<T>.parallel(parallelism: Int, runOn: (Int) -> CoroutineDispatcher) : ParallelFlow<T> =

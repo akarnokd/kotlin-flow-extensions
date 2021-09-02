@@ -11,7 +11,7 @@ Extensions to the Kotlin Flow library.
 
 ```groovy
 dependencies {
-    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.8"
+    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.9"
 }
 ```
 
@@ -28,6 +28,7 @@ Table of contents
 - Sources
   - `range`
   - `timer`
+  - [`concatArrayEager`](#concatarrayeager)
 - Intermediate Flow operators (`FlowExtensions`)
   - `Flow.concatWith`
   - `Flow.groupBy`
@@ -259,4 +260,24 @@ uws.take(5).collect { println(it) }
 
 // prints lines 11..15
 uws.take(5).collect { println(it) }
+```
+
+## concatArrayEager
+
+Launches all at once and emits all items from a source before items of the next are emitted.
+
+For example, given two sources, if the first is slow, the items of the second won't be emitted until the first has
+finished emitting its items. This operators allows all sources to generate items in parallel but then still emit those
+items in the order their respective `Flow`s are listed.
+
+Note that each source is consumed in an unbounded manner and thus, depending on the speed of
+the current source and the collector, the operator may retain items longer and may use more memory
+during its execution.
+
+```kotlin
+concatArrayEager(
+        range(1, 5).onStart { delay(200) },
+        range(6, 5)
+)
+.assertResult(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 ```
