@@ -17,8 +17,7 @@
 package hu.akarnokd.kotlin.flow.impl
 
 import hu.akarnokd.kotlin.flow.assertResult
-import hu.akarnokd.kotlin.flow.onBackpressurureDrop
-import hu.akarnokd.kotlin.flow.startCollectOn
+import hu.akarnokd.kotlin.flow.onBackpressureDrop
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.junit.Test
@@ -35,7 +34,7 @@ class FlowOnBackpressureDropTest {
                 delay(100)
             }
         }
-        .onBackpressurureDrop()
+        .onBackpressureDrop()
         .map {
             delay(130)
             it
