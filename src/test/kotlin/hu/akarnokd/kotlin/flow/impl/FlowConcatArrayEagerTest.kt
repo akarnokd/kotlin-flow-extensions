@@ -51,4 +51,20 @@ class FlowConcatArrayEagerTest {
                 .take(6)
                 .assertResult(1, 2, 3, 4, 5, 6)
     }
+
+    @Test
+    fun cancel() = runBlocking() {
+        var counter = AtomicInteger()
+        concatArrayEager(
+                range(1, 5).onEach {
+                    delay(200)
+                    counter.getAndIncrement()
+                }
+        )
+        .take(3)
+        .assertResult(1, 2, 3)
+
+        delay(1200)
+        assertEquals(3, counter.get())
+    }
 }

@@ -220,6 +220,17 @@ fun <T> mergeArray(vararg sources: Flow<T>) : Flow<T> = FlowMergeArray(sources)
 @FlowPreview
 fun <T> concatArrayEager(vararg sources: Flow<T>) : Flow<T> = FlowConcatArrayEager(sources)
 
+/**
+ * Maps the upstream values into [Flow]s and launches them all at once, then
+ * emits items from a source before items of the next are emitted.
+ * Note that the upstream and each source is consumed in an unbounded manner and thus,
+ * depending on the speed of the current source and the collector, the operator may retain
+ * items longer and may use more memory during its execution.
+ * @param mapper the suspendable function to turn an upstream item into a [Flow]
+ */
+@FlowPreview
+fun <T, R> Flow<T>.concatMapEager(mapper: suspend (T) -> Flow<R>) : Flow<R> = FlowConcatMapEager(this, mapper)
+
 // -----------------------------------------------------------------------------------------
 // Parallel Extensions
 // -----------------------------------------------------------------------------------------

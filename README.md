@@ -11,7 +11,7 @@ Extensions to the Kotlin Flow library.
 
 ```groovy
 dependencies {
-    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.9"
+    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.10"
 }
 ```
 
@@ -39,6 +39,7 @@ Table of contents
   - `Flow.takeUntil`
   - `Flow.onBackpressureDrop`
   - [`Flow.flatMapDrop`](#flowflatmapdrop)
+  - [`Flow.concatMapEager`](#flowconcatmapeager)
 - `ParallelFlow` operators (`FlowExtensions`)
   - `ParallelFlow.concatMap`
   - `ParallelFlow.filter`
@@ -280,4 +281,31 @@ concatArrayEager(
         range(6, 5)
 )
 .assertResult(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+```
+
+## Flow.concatMapEager
+
+Maps the upstream values into [Flow]s and launches them all at once, then
+emits items from a source before items of the next are emitted.
+
+For example, given two inner sources, if the first is slow, the items of the second won't be emitted until the first has
+finished emitting its items. This operators allows all sources to generate items in parallel but then still emit those
+items in the order their respective `Flow`s are mapped in.
+
+Note that the upstream and each source is consumed in an unbounded manner and thus,
+depending on the speed of the current source and the collector, the operator may retain
+items longer and may use more memory during its execution.
+
+```kotlin
+range(1, 5)
+.concatMapEager {
+    range(it * 10, 5).onEach { delay(100) }
+}
+.assertResult(
+        10, 11, 12, 13, 14,
+        20, 21, 22, 23, 24,
+        30, 31, 32, 33, 34,
+        40, 41, 42, 43, 44,
+        50, 51, 52, 53, 54
+)
 ```
