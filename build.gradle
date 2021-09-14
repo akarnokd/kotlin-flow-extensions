@@ -5,7 +5,7 @@ buildscript {
     ext.dokka_version = '1.5.0'
     ext.bnd_version = '5.3.0'
     ext.license_version = '0.15.0'
-    ext.vanniktech_version = '0.17.0'
+    ext.vanniktech_version = '0.18.0'
 
     repositories {
         mavenCentral()
