@@ -40,6 +40,7 @@ Table of contents
   - `Flow.onBackpressureDrop`
   - [`Flow.flatMapDrop`](#flowflatmapdrop)
   - [`Flow.concatMapEager`](#flowconcatmapeager)
+  - [`Flow.amb`](#flowamb)
 - `ParallelFlow` operators (`FlowExtensions`)
   - `ParallelFlow.concatMap`
   - `ParallelFlow.filter`
@@ -308,4 +309,17 @@ range(1, 5)
         40, 41, 42, 43, 44,
         50, 51, 52, 53, 54
 )
+```
+
+## Flow.amb
+
+Starts collecting all source [Flow]s and relays the items of the first one to emit an item,
+cancelling the rest.
+
+```kotlin
+amb(
+    range(1, 5).onStart { delay(1000) },
+    range(6, 5).onStart { delay(100) }
+)
+.assertResult(6, 7, 8, 9, 10)
 ```

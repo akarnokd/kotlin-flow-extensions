@@ -22,7 +22,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.collections.ArrayList
 
 /**
  * Shares a single collector towards the upstream source and multicasts
@@ -230,6 +232,22 @@ fun <T> concatArrayEager(vararg sources: Flow<T>) : Flow<T> = FlowConcatArrayEag
  */
 @FlowPreview
 fun <T, R> Flow<T>.concatMapEager(mapper: suspend (T) -> Flow<R>) : Flow<R> = FlowConcatMapEager(this, mapper)
+
+/**
+ * Starts collecting all source [Flow]s and relays the items of the first one to emit an item,
+ * cancelling the rest.
+ * @param sources the [Iterable] sequence of [Flow]s
+ */
+@FlowPreview
+fun <T> amb(sources: Iterable<Flow<T>>) : Flow<T> = FlowAmbIterable(sources)
+
+/**
+ * Starts collecting all source [Flow]s and relays the items of the first one to emit an item,
+ * cancelling the rest.
+ * @param sources the array of [Flow]s
+ */
+@FlowPreview
+fun <T> amb(vararg sources: Flow<T>) : Flow<T> = FlowAmbIterable(listOf(*sources))
 
 // -----------------------------------------------------------------------------------------
 // Parallel Extensions
