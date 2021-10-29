@@ -22,6 +22,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertThrows
 import org.junit.Ignore
 import org.junit.Test
 
@@ -82,4 +83,31 @@ class FlowGroupByTest {
                 .assertResultSet(1, 2)
     }
 
+    @Test
+    fun mainErrorsNoItems() {
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking {
+                (1..10)
+                        .asFlow()
+                        .map { if(it < 5) throw IllegalStateException("oops") else it }
+                        .groupBy { it % 2 == 0 }
+                        .flatMapMerge { it }
+                        .collect()
+            }
+        }
+    }
+
+    @Test
+    fun mainErrorsSomeItems() {
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking {
+                (1..10)
+                        .asFlow()
+                        .map { if(it > 5) throw IllegalStateException("oops") else it }
+                        .groupBy { it % 2 == 0 }
+                        .flatMapMerge { it }
+                        .collect()
+            }
+        }
+    }
 }

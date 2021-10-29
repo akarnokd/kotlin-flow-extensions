@@ -81,6 +81,7 @@ internal class FlowGroupBy<T, K, V>(
             for (group in map.values) {
                 group.error(ex)
             }
+            throw ex
         }
     }
 
