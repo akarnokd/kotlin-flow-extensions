@@ -34,8 +34,6 @@ internal class FlowMulticastFunction<T, R>(
         private val transform: suspend (Flow<T>) -> Flow<R>
 ) : AbstractFlow<R>() {
 
-    @ExperimentalCoroutinesApi
-    @InternalCoroutinesApi
     override suspend fun collectSafely(collector: FlowCollector<R>) {
 
         coroutineScope {

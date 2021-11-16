@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicInteger
 @FlowPreview
 class FlowMergeArray<T>(private val sources: Array<out Flow<T>>) : AbstractFlow<T>() {
 
-    @InternalCoroutinesApi
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         val queue = ConcurrentLinkedQueue<T>()
         val done = AtomicInteger(sources.size)

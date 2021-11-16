@@ -28,7 +28,6 @@ internal class FlowStartCollectOn<T>(
         val source: Flow<T>,
         private val coroutineDispatcher: CoroutineDispatcher) : AbstractFlow<T>() {
 
-    @InternalCoroutinesApi
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         coroutineScope {
 

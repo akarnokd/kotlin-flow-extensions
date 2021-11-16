@@ -60,7 +60,7 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
             try {
                 collector.next(value)
             } catch (ex: CancellationException) {
-                remove(collector);
+                remove(collector)
             }
         }
     }
@@ -142,7 +142,6 @@ class PublishSubject<T> : AbstractFlow<T>(), SubjectAPI<T>  {
     /**
      * Start collecting signals from this PublishSubject.
      */
-    @FlowPreview
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         val inner = ResumableCollector<T>()
         if (add(inner)) {

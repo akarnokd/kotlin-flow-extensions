@@ -89,7 +89,6 @@ class ReplaySubject<T> : AbstractFlow<T>, SubjectAPI<T> {
      * and any subsequent value received by this ReplaySubject until
      * the ReplaySubject gets terminated.
      */
-    @FlowPreview
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         val inner = InnerCollector(collector, this)
         add(inner)

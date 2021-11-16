@@ -27,8 +27,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 @FlowPreview
 internal class FlowOnBackpressureDrop<T>(private val source: Flow<T>) : AbstractFlow<T>() {
-    @ExperimentalCoroutinesApi
-    @InternalCoroutinesApi
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         coroutineScope {
             val consumerReady = AtomicBoolean()

@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicIntegerArray
 @FlowPreview
 class FlowConcatArrayEager<T>(private val sources: Array<out Flow<T>>) : AbstractFlow<T>() {
 
-    @InternalCoroutinesApi
     override suspend fun collectSafely(collector: FlowCollector<T>) {
         val n = sources.size
         val queues = Array(n) { ConcurrentLinkedQueue<T>() }

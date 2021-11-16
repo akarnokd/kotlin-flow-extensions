@@ -26,8 +26,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 @FlowPreview
 internal class FlowFlatMapDrop<T, R>(private val source: Flow<T>, private val mapper: suspend (T) -> Flow<R>) : AbstractFlow<R>() {
-    @ExperimentalCoroutinesApi
-    @InternalCoroutinesApi
     override suspend fun collectSafely(collector: FlowCollector<R>) {
         coroutineScope {
 
