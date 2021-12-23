@@ -16,6 +16,7 @@
 
 package hu.akarnokd.kotlin.flow
 
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.AbstractFlow
 import kotlinx.coroutines.flow.FlowCollector
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -26,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * @param <T> the item type
  */
+@FlowPreview
 class UnicastSubject<T> : AbstractFlow<T>(), SubjectAPI<T> {
 
     companion object {

@@ -11,7 +11,7 @@ Extensions to the Kotlin Flow library.
 
 ```groovy
 dependencies {
-    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.13"
+    implementation "com.github.akarnokd:kotlin-flow-extensions:0.0.14"
 }
 ```
 

@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @FlowPreview
 class FlowAmbIterable<T>(private val sources: Iterable<Flow<T>>) : Flow<T> {
-    @InternalCoroutinesApi
     override suspend fun collect(collector: FlowCollector<T>) {
         val winner = AtomicInteger()
         val jobs = ConcurrentHashMap<Job, Int>()
