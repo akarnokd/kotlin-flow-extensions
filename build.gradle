@@ -2,7 +2,7 @@ version '1.0-SNAPSHOT'
 
 buildscript {
     ext.kotlin_version = '1.6.10'
-    ext.dokka_version = '1.6.0'
+    ext.dokka_version = '1.6.10'
     ext.bnd_version = '6.1.0'
     ext.license_version = '0.15.0'
     ext.vanniktech_version = '0.18.0'
