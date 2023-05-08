@@ -6,7 +6,7 @@ buildscript {
     ext.bnd_version = '6.4.0'
     ext.license_version = '0.16.1'
     ext.vanniktech_version = '0.20.0'
-    ext.coroutines_version = '1.6.4'
+    ext.coroutines_version = '1.7.0'
 
     repositories {
         mavenCentral()
