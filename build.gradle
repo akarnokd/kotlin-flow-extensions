@@ -5,7 +5,7 @@ buildscript {
     ext.dokka_version = '1.9.10'
     ext.bnd_version = '6.4.0'
     ext.license_version = '0.16.1'
-    ext.vanniktech_version = '0.27.0'
+    ext.vanniktech_version = '0.28.0'
     ext.coroutines_version = '1.8.0'
 
     repositories {
